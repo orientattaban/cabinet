@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cabinet — Pearl &amp; Char</title>
+<meta name="description" content="A shared cabinet for the things Pearl and Char own.">
+
+<!-- Installable on phones: Add to Home Screen gives you a standalone app window -->
+<meta name="theme-color" content="#14332E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cabinet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314332E'/%3E%3Crect x='14' y='18' width='36' height='12' rx='3' fill='%23C99A46'/%3E%3Crect x='14' y='36' width='36' height='12' rx='3' fill='%23C99A46'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Karla:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================================
+   1. TOKENS  —  change the look of the whole app from here
+   ========================================================================= */
+:root{
+  --ink:#14201D;          /* primary text */
+  --ink-soft:#5A6763;     /* secondary text */
+  --ink-faint:#8D9793;    /* tertiary text, placeholders */
+  --paper:#E9ECE7;        /* app background */
+  --card:#FFFFFF;         /* card / sheet surface */
+  --line:#D9DED8;         /* hairlines and borders */
+  --teal:#14332E;         /* cabinet lacquer — nav, primary buttons */
+  --teal-lift:#1E4B43;    /* hover state of teal */
+  --brass:#C99A46;        /* hardware — active tab, focus, accents */
+  --brass-deep:#A97E30;
+  --pearl:#6B4E9E;        /* owner tag: Pearl */
+  --char:#B4563F;         /* owner tag: Char */
+  --danger:#A33427;
+  --ok:#2C6E52;
+
+  --r-sm:8px; --r-md:14px; --r-lg:22px;
+  --shadow-card:0 1px 2px rgba(20,32,29,.05), 0 8px 22px -14px rgba(20,32,29,.35);
+  --shadow-lift:0 10px 40px -18px rgba(20,32,29,.55);
+  --maxw:1180px;
+
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-ui:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-ui); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+:focus-visible{outline:2.5px solid var(--brass);outline-offset:2px;border-radius:4px}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;letter-spacing:-.015em;margin:0;line-height:1.15}
+.hide{display:none !important}
+
+/* ============================================================================
+   2. SHARED CONTROLS
+   ========================================================================= */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  padding:.62rem 1.05rem;border-radius:999px;font-weight:700;font-size:.95rem;
+  background:var(--card);color:var(--ink);border:1.5px solid var(--line);
+  transition:background .15s ease,border-color .15s ease,color .15s ease;
+}
+.btn:hover{border-color:var(--ink-faint)}
+.btn-primary{background:var(--teal);color:#F4F6F3;border-color:var(--teal)}
+.btn-primary:hover{background:var(--teal-lift);border-color:var(--teal-lift)}
+.btn-brass{background:var(--brass);color:#241A06;border-color:var(--brass)}
+.btn-brass:hover{background:var(--brass-deep);border-color:var(--brass-deep)}
+.btn-quiet{background:transparent;border-color:transparent;color:var(--ink-soft)}
+.btn-quiet:hover{background:rgba(20,32,29,.06);border-color:transparent;color:var(--ink)}
+.btn-danger{background:transparent;color:var(--danger);border-color:rgba(163,52,39,.35)}
+.btn-danger:hover{background:rgba(163,52,39,.08);border-color:var(--danger)}
+.btn-sm{padding:.4rem .75rem;font-size:.85rem}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+label.lbl{display:block;font-size:.82rem;font-weight:700;color:var(--ink-soft);margin:0 0 .3rem 2px}
+.input,select.input,textarea.input{
+  width:100%;padding:.62rem .8rem;background:#FBFCFA;border:1.5px solid var(--line);
+  border-radius:var(--r-sm);transition:border-color .15s ease;
+}
+.input:focus{border-color:var(--brass);outline:none}
+textarea.input{min-height:78px;resize:vertical}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235A6763' stroke-width='1.8'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+@media(max-width:520px){.row2{grid-template-columns:1fr}}
+.field{margin-bottom:.9rem}
+.hint{font-size:.8rem;color:var(--ink-faint);margin:.35rem 0 0 2px}
+
+/* multi-select chips used for Purpose etc. */
+.chipset{display:flex;flex-wrap:wrap;gap:.4rem}
+.chip{
+  padding:.36rem .7rem;border-radius:999px;border:1.5px solid var(--line);
+  background:#FBFCFA;font-size:.85rem;font-weight:500;color:var(--ink-soft);
+}
+.chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#F4F6F3}
+
+.tag{
+  display:inline-flex;align-items:center;gap:.32rem;padding:.16rem .5rem;border-radius:6px;
+  font-size:.76rem;font-weight:700;background:rgba(20,32,29,.06);color:var(--ink-soft);
+}
+.tag-owner{color:#fff}
+.dot{width:.62rem;height:.62rem;border-radius:50%;border:1px solid rgba(0,0,0,.18);flex:none}
+
+/* ============================================================================
+   3. LOCK SCREEN — the cabinet face
+   ========================================================================= */
+#lock{
+  position:fixed;inset:0;z-index:90;background:var(--teal);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 7px);
+}
+.lock-box{width:100%;max-width:400px;text-align:center;color:#EAF0EC}
+.lock-box h1{font-size:clamp(2.6rem,11vw,3.6rem);color:#F4F6F3}
+.lock-box p.sub{color:rgba(234,240,236,.62);margin:.5rem 0 2.1rem;font-size:.96rem}
+.plates{display:grid;gap:.85rem}
+.plate{
+  display:flex;align-items:center;gap:1rem;width:100%;text-align:left;
+  padding:1rem 1.1rem;border-radius:var(--r-md);
+  background:linear-gradient(180deg,#1E4B43,#193F39);
+  border:1.5px solid rgba(201,154,70,.42);
+  transition:transform .22s cubic-bezier(.2,.8,.3,1),border-color .22s ease,background .22s ease;
+}
+.plate:hover{background:linear-gradient(180deg,#235850,#1B443D);border-color:var(--brass)}
+.plate .pull{width:40px;height:8px;border-radius:4px;background:linear-gradient(180deg,#E0B767,#A97E30);flex:none}
+.plate .who{font-family:var(--font-display);font-weight:700;font-size:1.22rem;color:#F4F6F3}
+.plate .what{font-size:.82rem;color:rgba(234,240,236,.6)}
+.plate.opening{transform:translateY(6px) scale(1.03)}
+
+.pinwrap{margin-top:.4rem}
+.pin-name{font-family:var(--font-display);font-size:1.35rem;color:#F4F6F3;margin-bottom:.15rem}
+.pin-dots{display:flex;gap:.7rem;justify-content:center;margin:1.25rem 0 1.4rem}
+.pin-dots i{width:13px;height:13px;border-radius:50%;border:1.6px solid rgba(201,154,70,.6);background:transparent;transition:background .12s ease}
+.pin-dots i.on{background:var(--brass);border-color:var(--brass)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;max-width:280px;margin:0 auto}
+.pad button{
+  padding:.85rem 0;border-radius:var(--r-sm);font-size:1.22rem;font-weight:700;
+  background:rgba(255,255,255,.07);color:#EAF0EC;border:1.5px solid rgba(255,255,255,.09);
+}
+.pad button:hover{background:rgba(255,255,255,.14)}
+.pad button.mini{font-size:.85rem;font-weight:700}
+.shake{animation:shake .38s}
+@keyframes shake{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(5px)}50%{transform:translateX(-5px)}}
+.lock-err{color:#F0B7AE;font-size:.87rem;min-height:1.2rem;margin-top:.9rem}
+
+/* ============================================================================
+   4. APP SHELL
+   ========================================================================= */
+.topbar{
+  position:sticky;top:0;z-index:40;background:var(--teal);color:#EAF0EC;
+  padding:.7rem 1rem calc(.7rem + env(safe-area-inset-top,0px));
+  padding-top:max(.7rem,env(safe-area-inset-top,0px));
+}
+.topbar .inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:.6rem}
+.brand{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:#F4F6F3;letter-spacing:-.02em}
+.brand-mark{flex:none;border-radius:8px;box-shadow:0 1px 0 rgba(255,255,255,.08) inset}
+.who-chip{
+  display:inline-flex;align-items:center;gap:.45rem;margin-left:auto;
+  padding:.32rem .7rem .32rem .38rem;border-radius:999px;background:rgba(255,255,255,.1);font-size:.86rem;font-weight:700;
+}
+.avatar{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.76rem;font-weight:700;color:#fff}
+.icon-btn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#EAF0EC;background:rgba(255,255,255,.08)}
+.icon-btn:hover{background:rgba(255,255,255,.18)}
+
+.drawerbar{background:var(--teal);position:sticky;top:0;z-index:39}
+.drawerbar .inner{max-width:var(--maxw);margin:0 auto;display:flex;gap:.15rem;overflow-x:auto;padding:0 .6rem;scrollbar-width:none}
+.drawerbar .inner::-webkit-scrollbar{display:none}
+.dtab{
+  white-space:nowrap;padding:.6rem .85rem 0;color:rgba(234,240,236,.62);font-weight:700;font-size:.94rem;
+  border-bottom:3px solid transparent;display:flex;align-items:center;gap:.4rem;
+}
+.dtab span.n{font-size:.74rem;font-weight:700;background:rgba(255,255,255,.12);padding:.05rem .38rem;border-radius:5px}
+.dtab .lbl2{padding-bottom:.6rem;border-bottom:3px solid transparent;margin-bottom:-3px}
+.dtab:hover{color:#EAF0EC}
+.dtab[aria-selected="true"]{color:#fff;border-bottom-color:var(--brass)}
+
+main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
+
+/* two-column layout: filter sidebar (left, like an online store) + content */
+.layout{display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start}
+@media(max-width:860px){.layout{grid-template-columns:1fr}}
+
+.search{position:relative;margin-bottom:.9rem}
+.search input{padding-left:2.2rem;background:#FBFCFA}
+.search svg{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--ink-faint)}
+
+.sidebar{
+  background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-md);
+  padding:1rem;position:sticky;top:calc(4.6rem + env(safe-area-inset-top,0px));
+  max-height:calc(100vh - 5.8rem);overflow-y:auto;
+}
+.sidebar .sbtitle{font-family:var(--font-display);font-size:1.05rem;margin-bottom:.8rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.filtergroup{border-bottom:1.5px solid var(--line);padding:.75rem 0}
+.filtergroup:first-of-type{padding-top:0}
+.filtergroup:last-of-type{border-bottom:none;padding-bottom:0}
+.filtergroup .fg-label{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:.5rem;display:block}
+.fg-opts{display:flex;flex-direction:column;gap:.1rem}
+.fg-opt{
+  display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;padding:.36rem .45rem;border-radius:var(--r-sm);
+  font-size:.87rem;color:var(--ink);
+}
+.fg-opt:hover{background:rgba(20,32,29,.06)}
+.fg-opt[aria-pressed="true"]{background:var(--teal);color:#F4F6F3;font-weight:700}
+.fg-opt .fg-dot{width:.72rem;height:.72rem;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.18)}
+
+.sb-close{display:none}
+.sidebar-scrim{display:none}
+@media(max-width:860px){
+  .sidebar{
+    position:fixed;inset:0 20% 0 0;max-width:340px;max-height:none;z-index:65;
+    border-radius:0 var(--r-lg) var(--r-lg) 0;transform:translateX(-106%);transition:transform .24s cubic-bezier(.2,.8,.3,1);
+    box-shadow:var(--shadow-lift);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-scrim{display:block;position:fixed;inset:0;background:rgba(15,26,23,.5);z-index:64;opacity:0;pointer-events:none;transition:opacity .2s ease}
+  .sidebar-scrim.open{opacity:1;pointer-events:auto}
+  .sidebar .sb-close{display:inline-flex;margin-bottom:.6rem}
+}
+
+.content-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem}
+.content-head .count{flex:1;margin:0;font-size:.86rem;color:var(--ink-soft)}
+.content-head select{width:auto;min-width:150px;background:var(--card)}
+.mobile-filter-btn{display:none}
+@media(max-width:860px){.mobile-filter-btn{display:inline-flex}}
+.count{font-size:.86rem;color:var(--ink-soft);margin:0 0 .8rem 2px}
+
+/* item grid */
+.grid{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+@media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr);gap:.7rem}}
+@media(max-width:340px){.grid{grid-template-columns:1fr}}
+.item{
+  background:var(--card);border-radius:var(--r-md);overflow:hidden;text-align:left;width:100%;
+  box-shadow:var(--shadow-card);display:flex;flex-direction:column;
+  transition:box-shadow .18s ease,transform .18s ease;
+}
+.item:hover{box-shadow:var(--shadow-lift);transform:translateY(-2px)}
+.thumb{aspect-ratio:4/3;background:#F3F5F1;position:relative;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:1.5rem;color:rgba(255,255,255,.92);text-shadow:0 1px 6px rgba(0,0,0,.22)}
+.owner-flag{position:absolute;top:.5rem;left:.5rem;padding:.16rem .5rem;border-radius:6px;font-size:.72rem;font-weight:700;color:#fff;backdrop-filter:blur(3px)}
+.item .body{padding:.65rem .7rem .75rem}
+.item .nm{margin-bottom:.32rem}
+.item .meta{font-size:.8rem;color:var(--ink-soft);margin-bottom:.4rem}
+.item .tags{display:flex;flex-wrap:wrap;gap:.28rem}
+
+/* brand (small, top) / model (bigger, next line) — used on cards and detail */
+.brandline{display:block;font-family:var(--font-ui);font-weight:700;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.14rem}
+.modelline{display:block;font-family:var(--font-display);font-weight:700;font-size:1.04rem;line-height:1.16;color:var(--ink)}
+.sheet header h2{display:flex;flex-direction:column;gap:.08rem}
+.sheet header h2 .modelline{font-size:1.4rem}
+
+.empty{
+  border:2px dashed var(--line);border-radius:var(--r-lg);padding:2.6rem 1.4rem;text-align:center;background:rgba(255,255,255,.5);
+}
+.empty h3{font-size:1.25rem;margin-bottom:.4rem}
+.empty p{color:var(--ink-soft);margin:0 auto 1.2rem;max-width:34ch}
+
+.fab{
+  position:fixed;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:35;
+  padding:.85rem 1.25rem;border-radius:999px;background:var(--brass);color:#241A06;font-weight:700;
+  box-shadow:0 10px 26px -10px rgba(20,32,29,.6);display:inline-flex;gap:.45rem;align-items:center;
+}
+.fab:hover{background:var(--brass-deep)}
+
+/* ============================================================================
+   5. SHEETS (modals) — centered on desktop, bottom sheet on phones
+   ========================================================================= */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(15,26,23,.55);display:flex;align-items:center;justify-content:center;padding:1rem}
+.sheet{
+  background:var(--card);border-radius:var(--r-lg);width:100%;max-width:560px;max-height:90vh;
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lift);animation:pop .2s ease-out;
+}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.985)}}
+.sheet header{display:flex;align-items:center;gap:.6rem;padding:1rem 1.1rem .7rem}
+.sheet header h2{font-size:1.3rem;flex:1}
+.sheet .content{padding:0 1.1rem 1.1rem;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet footer{display:flex;gap:.6rem;padding:.85rem 1.1rem;border-top:1.5px solid var(--line);flex-wrap:wrap}
+.sheet footer .grow{flex:1}
+@media(max-width:600px){
+  .scrim{align-items:flex-end;padding:0}
+  .sheet{max-width:none;max-height:94vh;border-radius:var(--r-lg) var(--r-lg) 0 0;animation:slideup .24s cubic-bezier(.2,.8,.3,1)}
+  .sheet footer{padding-bottom:calc(.85rem + env(safe-area-inset-bottom,0px))}
+}
+@keyframes slideup{from{transform:translateY(100%)}}
+
+/* photo picker inside the form — multiple photos per item */
+.photo-pick{margin-bottom:1rem}
+.photo-gallery{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.6rem}
+.photo-thumb{width:82px;height:82px;border-radius:var(--r-sm);background:#F3F5F1;overflow:hidden;flex:none;border:1.5px solid var(--line);position:relative}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(20,32,29,.72);color:#fff;display:grid;place-items:center;font-size:.72rem;line-height:1}
+.photo-empty{width:100%;padding:1rem;text-align:center;color:var(--ink-faint);font-size:.8rem;border:1.5px dashed var(--line);border-radius:var(--r-sm)}
+.photo-acts{display:flex;flex-direction:column;gap:.45rem}
+.photo-acts .linkrow{display:flex;gap:.4rem}
+.photo-acts .linkrow .input{flex:1}
+
+/* detail view — gallery hero + thumbnail strip */
+.detail-hero{aspect-ratio:16/10;background:#F3F5F1;border-radius:var(--r-md);overflow:hidden;margin-bottom:.6rem;position:relative}
+.detail-hero img{width:100%;height:100%;object-fit:cover}
+.detail-thumbs{display:flex;gap:.5rem;margin:0 0 .9rem;overflow-x:auto}
+.dthumb{width:56px;height:56px;border-radius:var(--r-sm);overflow:hidden;flex:none;border:2px solid transparent;opacity:.65}
+.dthumb img{width:100%;height:100%;object-fit:cover}
+.dthumb.active{border-color:var(--brass);opacity:1}
+.spec{display:grid;grid-template-columns:120px 1fr;gap:.45rem .8rem;font-size:.94rem}
+.spec dt{color:var(--ink-faint);font-weight:700;font-size:.84rem;padding-top:.12rem}
+.spec dd{margin:0}
+
+/* settings */
+.seg{display:flex;gap:.3rem;background:#E1E5DF;padding:.25rem;border-radius:999px;margin-bottom:1rem;overflow-x:auto}
+.seg button{flex:1;white-space:nowrap;padding:.45rem .8rem;border-radius:999px;font-size:.9rem;font-weight:700;color:var(--ink-soft)}
+.seg button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,32,29,.12)}
+.listrow{display:flex;align-items:center;gap:.7rem;padding:.65rem 0;border-bottom:1.5px solid var(--line)}
+.listrow:last-child{border-bottom:none}
+.listrow .gr{flex:1;min-width:0}
+.listrow .t{font-weight:700}
+.listrow .s{font-size:.82rem;color:var(--ink-faint)}
+.bar{height:7px;border-radius:4px;background:#E1E5DF;overflow:hidden;margin-top:.4rem}
+.bar i{display:block;height:100%;background:var(--brass)}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1.3rem + env(safe-area-inset-bottom,0px));z-index:80;
+  background:var(--teal);color:#EAF0EC;padding:.7rem 1.15rem;border-radius:999px;font-size:.9rem;font-weight:500;
+  box-shadow:var(--shadow-lift);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+@media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+
+<!-- ========================= LOCK SCREEN ========================= -->
+<div id="lock">
+  <div class="lock-box">
+    <div id="lockPick">
+      <h1>Cabinet</h1>
+      <p class="sub">Everything the two of you own, in one place.</p>
+      <div class="plates" id="plates"></div>
+    </div>
+
+    <div id="lockPin" class="pinwrap hide">
+      <div class="pin-name" id="pinName"></div>
+      <p class="sub" style="margin:.2rem 0 0">Enter your 4-digit code</p>
+      <div class="pin-dots" id="pinDots"><i></i><i></i><i></i><i></i></div>
+      <div class="pad" id="pad"></div>
+      <div class="lock-err" id="lockErr"></div>
+      <button class="btn btn-quiet" style="color:rgba(234,240,236,.7);margin-top:.2rem" onclick="backToPick()">Choose someone else</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================= APP ========================= -->
+<div id="app" class="hide">
+  <div class="topbar">
+    <div class="inner">
+      <div class="brand">
+        <svg class="brand-mark" width="27" height="27" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="16" fill="#0E2622"/>
+          <rect x="11" y="14" width="42" height="15" rx="4.5" fill="#C99A46"/>
+          <rect x="11" y="35" width="42" height="15" rx="4.5" fill="#C99A46"/>
+          <circle cx="43" cy="21.5" r="2.6" fill="#0E2622"/>
+          <circle cx="43" cy="42.5" r="2.6" fill="#0E2622"/>
+        </svg>
+        <span>Cabinet</span>
+      </div>
+      <div class="who-chip"><span class="avatar" id="meAvatar"></span><span id="meName"></span></div>
+      <button class="icon-btn" title="Settings" onclick="openSettings()" aria-label="Settings">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 007 19.4a1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003 15H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 7a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 009 3V3a2 2 0 114 0v.1A1.7 1.7 0 0017 4.6a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 9h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 2z"/></svg>
+      </button>
+      <button class="icon-btn" title="Lock" onclick="lockNow()" aria-label="Lock the cabinet">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <nav class="drawerbar"><div class="inner" id="dtabs" role="tablist"></div></nav>
+
+  <main>
+    <div class="layout">
+      <div class="sidebar-scrim" id="sbScrim"></div>
+      <aside class="sidebar" id="sidebar">
+        <button class="btn btn-quiet btn-sm sb-close" id="sbClose">Close ✕</button>
+        <h3 class="sbtitle">Filters
+          <button class="btn btn-quiet btn-sm" id="clearFiltersBtn" style="display:none;padding:.2rem .5rem">Clear</button>
+        </h3>
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+          <input class="input" id="q" placeholder="Search" autocomplete="off">
+        </div>
+        <div id="filterGroups"></div>
+      </aside>
+      <div class="content">
+        <div class="content-head">
+          <button class="btn btn-sm mobile-filter-btn" id="openSidebarBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+            Filters
+          </button>
+          <p class="count" id="count"></p>
+          <select class="input" id="sort" aria-label="Sort">
+            <option value="new">Newest first</option>
+            <option value="az">Name A–Z</option>
+            <option value="brand">By brand</option>
+          </select>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <button class="fab" onclick="openForm()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>
+    <span id="fabLabel">Add</span>
+  </button>
+</div>
+
+<div id="modals"></div>
+<div id="toast"></div>
+
+<!-- Optional shared-database backend (Firebase/Firestore). Harmless if never configured (Settings > Sync). -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+/* ============================================================================
+   CABINET  —  single-file app. No build step, no server.
+   Sections:
+     A. Storage adapter        F. Filtering + grid
+     A2. Cloud sync (Supabase) G. Item form (add / edit)
+     B. Seed data / schema     H. Item detail
+     C. Helpers                I. Settings
+     D. Lock screen            J. Boot
+     E. App shell / drawers
+   Data lives on this device by default. Settings > Sync connects a shared
+   Firebase project so edits sync between both of you in real time; without
+   it, Settings > Data > "Save a backup file" exports everything as JSON so
+   you can move it to another phone by hand.
+   ========================================================================= */
+
+/* ---------- A. STORAGE ADAPTER -------------------------------------------
+   Works in three places: Claude artifacts (window.storage), a normal browser
+   or GitHub Pages (localStorage), and anywhere else (memory only).          */
+const Store = (() => {
+  const KEY = 'cabinet.v1';
+  const mem = {};
+  const hasLS = (() => { try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; } catch(e){ return false; } })();
+  const hasWS = typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+  return {
+    mode: hasWS ? 'artifact' : hasLS ? 'browser' : 'memory',
+    async load(){
+      try{
+        if(hasWS){ const r = await window.storage.get(KEY); return r ? JSON.parse(r.value) : null; }
+        if(hasLS){ const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; }
+        return mem[KEY] || null;
+      }catch(e){ return null; }
+    },
+    async save(obj){
+      const s = JSON.stringify(obj);
+      try{
+        if(hasWS){ await window.storage.set(KEY, s); return true; }
+        if(hasLS){ localStorage.setItem(KEY, s); return true; }
+        mem[KEY] = obj; return true;
+      }catch(e){
+        toast(e && /quota/i.test(e.name+e.message) ? 'Storage is full. Remove a photo or two, or save a backup and reset.' : 'Could not save.');
+        return false;
+      }
+    },
+    bytes(){ try{ return hasLS ? (localStorage.getItem(KEY)||'').length : JSON.stringify(DB||{}).length; }catch(e){ return 0; } }
+  };
+})();
+
+/* ---------- A2. CLOUD SYNC (Firebase / Firestore) -------------------------
+   Live against project cabinet-81a61. The whole cabinet is one Firestore
+   document (cabinet/main); every save writes it, and onSnapshot pushes the
+   other person's writes back here within about a second.
+
+   The one thing that must be set in the Firebase console for this to work is
+   Build > Firestore Database > Rules:
+
+     rules_version = '2';
+     service cloud.firestore {
+       match /databases/{database}/documents {
+         match /cabinet/{doc} { allow read, write: if true; }
+       }
+     }
+
+   That is deliberately open — same trust level as the 4-digit PIN on the
+   lock screen. Anyone who has the site's address could reach the data. Fine
+   for a shoe cabinet; worth tightening (Firebase Auth) before anything more
+   personal goes in here.
+   ========================================================================= */
+/* Pearl's Firebase project, baked in so both phones sync with nothing to set
+   up. Firebase web keys are identifiers, not secrets — they're meant to sit in
+   client code; what actually guards the data is the Firestore rules. */
+const DEFAULT_FIREBASE = {
+  apiKey: "AIzaSyBHchOFvS2vI3Oq69ogt9r1eH8numA02jI",
+  authDomain: "cabinet-81a61.firebaseapp.com",
+  projectId: "cabinet-81a61",
+  storageBucket: "cabinet-81a61.firebasestorage.app",
+  messagingSenderId: "409188310213",
+  appId: "1:409188310213:web:d5340878f2798960d8e4ac"
+};
+
+const Cloud = (() => {
+  const CKEY = 'cabinet.cloud.v1';
+  let app = null, db = null, unsub = null, ready = false, lastPushedAt = 0;
+
+  /* Settings > Sync overrides the built-in project; "Disconnect" writes an
+     explicit off-switch so this device stops syncing entirely. */
+  function config(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(CKEY) || 'null');
+      if(saved && saved.disabled) return {};
+      if(saved && saved.apiKey) return saved;
+    }catch(e){}
+    return Object.assign({}, DEFAULT_FIREBASE);
+  }
+  function setConfig(cfg){ localStorage.setItem(CKEY, JSON.stringify(cfg)); }
+
+  /* Accepts either strict JSON or a pasted `const firebaseConfig = {...}`
+     snippet straight from the Firebase console — pulls out key: "value" pairs. */
+  function parseConfigText(text){
+    const out = {};
+    ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId','databaseURL','measurementId'].forEach(k=>{
+      const m = text.match(new RegExp(k+'\\s*:\\s*["\']([^"\']+)["\']'));
+      if(m) out[k] = m[1];
+    });
+    return out;
+  }
+
+  async function connect(onRemoteChange){
+    const cfg = config();
+    if(!cfg.apiKey || !cfg.projectId) return false;
+    if(typeof window.firebase === 'undefined'){ console.warn('Firebase library did not load (offline?).'); return false; }
+    try{
+      app = window.firebase.apps && window.firebase.apps.length ? window.firebase.apps[0] : window.firebase.initializeApp(cfg);
+      db = window.firebase.firestore(app);
+      unsub = db.collection('cabinet').doc('main').onSnapshot(snap=>{
+        if(snap.metadata.hasPendingWrites) return; // that's our own write echoing back — ignore
+        const d = snap.data();
+        if(d && d.data) onRemoteChange(d.data);
+      }, err => console.warn(err));
+      ready = true;
+      return true;
+    }catch(e){ console.warn(e); return false; }
+  }
+  async function pull(){
+    if(!db) return null;
+    try{
+      const snap = await db.collection('cabinet').doc('main').get();
+      return snap.exists ? (snap.data().data || null) : null;
+    }catch(e){ console.warn(e); return null; }
+  }
+  async function push(dbObj){
+    if(!db) return;
+    try{
+      lastPushedAt = Date.now();
+      await db.collection('cabinet').doc('main').set({data:dbObj, updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});
+    }catch(e){ console.warn(e); toast('Could not sync to the shared cabinet — saved on this device only.'); }
+  }
+  function disconnect(){
+    if(unsub) unsub();
+    app=null; db=null; unsub=null; ready=false;
+    localStorage.setItem(CKEY, JSON.stringify({disabled:true}));
+  }
+  function statusText(){
+    const cfg = config();
+    if(!cfg.apiKey) return 'Turned off here — this device keeps its own copy and nothing travels either way.';
+    if(ready) return 'Connected to ' + cfg.projectId + '. Anything either of you changes shows up on the other phone within a second.';
+    return 'Could not reach ' + cfg.projectId + '. Usually that means no internet, or the Firestore rules are still blocking access.';
+  }
+  return { config, setConfig, parseConfigText, connect, pull, push, disconnect, statusText, isReady:()=>ready };
+})();
+
+function saveCloudConfig(){
+  const raw = $('#cf_config').value.trim();
+  if(!raw){ toast('Paste your Firebase config first.'); return; }
+  let cfg;
+  try{ cfg = JSON.parse(raw); }catch(e){ cfg = Cloud.parseConfigText(raw); }
+  if(!cfg.apiKey || !cfg.projectId){ toast('Could not find an apiKey and projectId in that — paste the whole firebaseConfig object.'); return; }
+  Cloud.setConfig(cfg);
+  toast('Saved — reconnecting…');
+  setTimeout(()=>location.reload(), 500);
+}
+function disconnectCloud(){
+  if(!confirm('Stop syncing on this device? Your data stays here, but changes stop travelling both ways.')) return;
+  Cloud.disconnect();
+  toast('Disconnected.');
+  renderSettings();
+}
+function reconnectCloud(){
+  localStorage.removeItem('cabinet.cloud.v1');
+  toast('Reconnecting…');
+  setTimeout(()=>location.reload(), 500);
+}
+
+/* ---------- B. SEED DATA + SCHEMA ----------------------------------------
+   A drawer = { id, name, icon, noun, fields[] }
+   A field  = { key, label, type, options?, filter? }
+     type: text | select | tags | color | textarea
+   Add a drawer in Settings, or add one here to ship it as a default.       */
+const COLORS = [
+  {name:'Purple',hex:'#7B4EA8'},{name:'Blue',hex:'#2F6FB5'},{name:'Classic blue',hex:'#1E4C8A'},
+  {name:'Green/Blue',hex:'#2E8B8B'},{name:'Green',hex:'#3C8A55'},{name:'Dirty white',hex:'#DED8C9'},
+  {name:'White',hex:'#F2F2EF'},{name:'Black',hex:'#25282A'},{name:'Grey',hex:'#8D9298'},
+  {name:'Pink',hex:'#D96A94'},{name:'Red',hex:'#C0392B'},{name:'Beige',hex:'#D8C4A6'},
+  {name:'Brown',hex:'#7A5330'},{name:'Silver',hex:'#C3C7CB'},{name:'Multi',hex:'#9B7FB8'}
+];
+const OWNERS = ['Pearl','Char','Shared'];
+const OWNER_COLOR = {Pearl:'#6B4E9E', Char:'#B4563F', Shared:'#2C6E52'};
+
+const SHOE_FIELDS = [
+  {key:'brand', label:'Brand', type:'select', filter:true, options:['Adidas','Nike','Asics','Onitsuka Tiger','New Balance','Hoka','Puma','Skechers','Other']},
+  {key:'model', label:'Model', type:'select', filter:true, options:['Dropset','Adizero Boston','Quest 6','Gel-Nimbus','Gel-Kayano','Mexico 66','Ultraboost','Other']},
+  {key:'purpose', label:'Purpose', type:'tags', filter:true, options:['Running','Hybrid','Gym','Walking','Office','Occasion','Trail','Travel']},
+  {key:'size', label:'Size', type:'text', filter:true},
+  {key:'color', label:'Colour', type:'color', filter:true},
+  {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'notes', label:'Notes', type:'textarea'}
+];
+const BAG_FIELDS = [
+  {key:'brand', label:'Brand', type:'select', filter:true, options:['Samsonite','American Tourister','Nike','Adidas','Herschel','Longchamp','Other']},
+  {key:'purpose', label:'Type', type:'tags', filter:true, options:['Luggage','Office','Gym','Travel','Everyday','Occasion']},
+  {key:'size', label:'Size', type:'text', filter:true},
+  {key:'color', label:'Colour', type:'color', filter:true},
+  {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'notes', label:'Notes', type:'textarea'}
+];
+const TUMBLER_FIELDS = [
+  {key:'brand', label:'Brand', type:'select', filter:true, options:['Stanley','Hydro Flask','Yeti','Owala','Starbucks','Contigo','Other']},
+  {key:'purpose', label:'Use', type:'tags', filter:true, options:['Gym','Office','Travel','Home','Hot drinks','Cold drinks']},
+  {key:'size', label:'Capacity', type:'text', filter:true},
+  {key:'color', label:'Colour', type:'color', filter:true},
+  {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'notes', label:'Notes', type:'textarea'}
+];
+const BLANK_FIELDS = [
+  {key:'brand', label:'Brand', type:'select', filter:true, options:['Other']},
+  {key:'purpose', label:'Category', type:'tags', filter:true, options:['Everyday','Occasion']},
+  {key:'color', label:'Colour', type:'color', filter:true},
+  {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'notes', label:'Notes', type:'textarea'}
+];
+const TEMPLATES = {shoes:SHOE_FIELDS, bags:BAG_FIELDS, tumblers:TUMBLER_FIELDS, blank:BLANK_FIELDS};
+
+/* Photos fetched from the brands' own product pages (adidas.ae / nike.ae) —
+   hotlinked from their CDN, since photos captured on your phones will be
+   compressed and stored directly instead. */
+const DROPSET_IMAGES = [
+  'https://assets.adidas.com/images/w_940,f_auto,q_auto/fa0089e976a64e60a55d2136c10d324b_9366/LA3925_01_00_standard.jpg',
+  'https://assets.adidas.com/images/w_940,f_auto,q_auto/5d40bf23cc704e88b596f46967d9bedb_9366/LA3925_02_standard.jpg',
+  'https://assets.adidas.com/images/w_940,f_auto,q_auto/9761b61933524daca69cca540987e693_9366/LA3925_03_standard.jpg',
+  'https://assets.adidas.com/images/w_940,f_auto,q_auto/eefb2d739bd9432e8fcb4f40d65b3224_9366/LA3925_04_standard.jpg'
+];
+const QUEST6_IMAGES = [
+  'https://www.nike.ae/dw/image/v2/BDVB_PRD/on/demandware.static/-/Sites-akeneo-master-catalog/default/dwfdb5be45/nk/NK_/N/K/F/D/6/0/NK_NKFD6034_302_198729516701_1.jpg?sw=900&sh=900&sm=fit&q=100&strip=false',
+  'https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/378820bf-d936-411c-950b-b80e1033c454/NIKE+QUEST+6.png'
+];
+
+function seed(){
+  const s = (name,f,images) => ({id:uid(), drawerId:'shoes', name, images:images||[], fields:f, createdAt:Date.now()});
+  return {
+    version:1,
+    users:{ Pearl:{pin:hash('1111')}, Char:{pin:hash('2222')} },
+    colors:COLORS.slice(),
+    drawers:[
+      {id:'shoes',    name:'Shoes',    icon:'👟', noun:'pair',   fields:clone(SHOE_FIELDS)},
+      {id:'bags',     name:'Bags',     icon:'🎒', noun:'bag',    fields:clone(BAG_FIELDS)},
+      {id:'tumblers', name:'Tumblers', icon:'🥤', noun:'tumbler',fields:clone(TUMBLER_FIELDS)}
+    ],
+    items:[
+      s('Adidas Dropset',      {brand:'Adidas', model:'Dropset',        purpose:['Gym','Hybrid'],  size:'7.5 US W', color:'Purple',       owner:'Pearl', notes:'Adizero Dropset Pro — Frozen Purple / Silver Metallic / Cloud White. Flat, stable sole — lifting days.'}, DROPSET_IMAGES),
+      s('Adidas Adizero Boston',{brand:'Adidas',model:'Adizero Boston', purpose:['Running'],       size:'7.5 US W', color:'Blue',         owner:'Char',  notes:'Tempo and race-pace runs.'}),
+      s('Nike Quest 6',        {brand:'Nike',   model:'Quest 6',        purpose:['Running','Walking'],size:'7.5 US W',color:'Black',      owner:'Pearl', notes:'Black / Iron Grey / White. Daily easy miles.'}, QUEST6_IMAGES),
+      s('Asics Gel-Nimbus',    {brand:'Asics',  model:'Gel-Nimbus',     purpose:['Running'],       size:'7.5 US W', color:'Green/Blue',   owner:'Pearl', notes:'Max cushion, long runs.'}),
+      s('Asics Gel-Kayano',    {brand:'Asics',  model:'Gel-Kayano',     purpose:['Running'],       size:'7.5 US W', color:'Dirty white',  owner:'Char',  notes:'Stability trainer.'}),
+      s('Onitsuka Tiger Mexico 66',{brand:'Onitsuka Tiger',model:'Mexico 66',purpose:['Walking','Office','Occasion'],size:'7.5 US W',color:'Classic blue',owner:'Pearl',notes:'Classic blue with the red stripe.'}),
+      {id:uid(),drawerId:'bags',name:'Sample 1',images:[],fields:{brand:'Other',purpose:['Luggage'],size:'',color:'Black',owner:'Pearl',notes:'Replace with a real bag.'},createdAt:Date.now()},
+      {id:uid(),drawerId:'bags',name:'Sample 2',images:[],fields:{brand:'Other',purpose:['Office'],size:'',color:'Beige',owner:'Char',notes:''},createdAt:Date.now()},
+      {id:uid(),drawerId:'bags',name:'Sample 3',images:[],fields:{brand:'Other',purpose:['Gym'],size:'',color:'Grey',owner:'Shared',notes:''},createdAt:Date.now()},
+      {id:uid(),drawerId:'tumblers',name:'Sample 1',images:[],fields:{brand:'Other',purpose:['Gym'],size:'750 ml',color:'Pink',owner:'Pearl',notes:''},createdAt:Date.now()},
+      {id:uid(),drawerId:'tumblers',name:'Sample 2',images:[],fields:{brand:'Other',purpose:['Office'],size:'500 ml',color:'White',owner:'Char',notes:''},createdAt:Date.now()},
+      {id:uid(),drawerId:'tumblers',name:'Sample 3',images:[],fields:{brand:'Other',purpose:['Travel'],size:'1 L',color:'Silver',owner:'Shared',notes:''},createdAt:Date.now()}
+    ]
+  };
+}
+/* Old saves only ever had a single `image` string — lift it into `images[]`. */
+function migrate(){
+  (DB.items||[]).forEach(it=>{
+    if(!Array.isArray(it.images)) it.images = it.image ? [it.image] : [];
+  });
+}
+
+/* ---------- C. HELPERS ---------------------------------------------------- */
+let DB = null, ME = null, ACTIVE = 'shoes', FILTERS = {}, SEARCH = '', SORT = 'new';
+
+const $  = (s,r=document) => r.querySelector(s);
+const $$ = (s,r=document) => Array.from(r.querySelectorAll(s));
+const uid = () => Math.random().toString(36).slice(2,10);
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* soft, non-cryptographic code hash — this is a privacy lock, not a vault */
+function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0).toString(36); }
+function hexOf(name){ const c=(DB?.colors||COLORS).find(c=>c.name===name); return c?c.hex:'#B9C0BA'; }
+function save(){ Store.save(DB); if(Cloud.isReady()) Cloud.push(DB); }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400); }
+function drawer(id){ return DB.drawers.find(d=>d.id===id) || DB.drawers[0]; }
+function initials(n){ return (n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function asArr(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
+/* Brand small on top, model bigger underneath — falls back to the plain name
+   for drawers that don't have both a brand and a model field (bags, tumblers). */
+function nameBlock(it){
+  const f = it.fields||{};
+  if(f.brand && f.model) return `<span class="brandline">${esc(f.brand)}</span><span class="modelline">${esc(f.model)}</span>`;
+  return `<span class="modelline">${esc(it.name)}</span>`;
+}
+
+function closeModal(){ $('#modals').innerHTML=''; document.body.style.overflow=''; }
+function showModal(html){
+  $('#modals').innerHTML = `<div class="scrim" onclick="if(event.target===this)closeModal()">${html}</div>`;
+  document.body.style.overflow='hidden';
+}
+
+/* ---------- D. LOCK SCREEN ----------------------------------------------- */
+let pinFor = null, pinBuf = '';
+
+function renderPlates(){
+  $('#plates').innerHTML = Object.keys(DB.users).map(n => `
+    <button class="plate" onclick="pickUser('${esc(n)}',this)">
+      <span class="pull"></span>
+      <span>
+        <span class="who">${esc(n)}</span><br>
+        <span class="what">${DB.items.filter(i=>i.fields.owner===n).length} things in here</span>
+      </span>
+    </button>`).join('');
+}
+function pickUser(name, el){
+  el.classList.add('opening');
+  setTimeout(()=>{
+    pinFor = name; pinBuf = '';
+    $('#lockPick').classList.add('hide'); $('#lockPin').classList.remove('hide');
+    $('#pinName').textContent = name; $('#lockErr').textContent=''; drawDots();
+  }, 170);
+}
+function backToPick(){ $('#lockPin').classList.add('hide'); $('#lockPick').classList.remove('hide'); renderPlates(); }
+function drawDots(){ $$('#pinDots i').forEach((d,i)=>d.classList.toggle('on', i<pinBuf.length)); }
+function padPress(v){
+  if(v==='del'){ pinBuf = pinBuf.slice(0,-1); drawDots(); return; }
+  if(pinBuf.length>=4) return;
+  pinBuf += v; drawDots();
+  if(pinBuf.length===4) setTimeout(tryUnlock,120);
+}
+function tryUnlock(){
+  if(hash(pinBuf) === DB.users[pinFor].pin){ ME = pinFor; enterApp(); }
+  else{
+    $('#lockErr').textContent = 'That code does not match. Try again.';
+    $('#pinDots').classList.add('shake');
+    setTimeout(()=>{ $('#pinDots').classList.remove('shake'); pinBuf=''; drawDots(); }, 400);
+  }
+}
+function lockNow(){
+  ME=null; pinBuf=''; closeModal();
+  $('#app').classList.add('hide'); $('#lock').classList.remove('hide');
+  backToPick();
+}
+function buildPad(){
+  $('#pad').innerHTML = [1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="padPress('${n}')">${n}</button>`).join('')
+    + `<button class="mini" onclick="backToPick()">Back</button>`
+    + `<button onclick="padPress('0')">0</button>`
+    + `<button class="mini" onclick="padPress('del')">Delete</button>`;
+}
+document.addEventListener('keydown', e=>{
+  if($('#lockPin').classList.contains('hide')) return;
+  if(/^[0-9]$/.test(e.key)) padPress(e.key);
+  if(e.key==='Backspace') padPress('del');
+});
+
+/* ---------- E. APP SHELL / DRAWERS ---------------------------------------- */
+function enterApp(){
+  $('#lock').classList.add('hide'); $('#app').classList.remove('hide');
+  $('#meName').textContent = ME;
+  $('#meAvatar').textContent = initials(ME);
+  $('#meAvatar').style.background = OWNER_COLOR[ME] || '#2C6E52';
+  if(!DB.drawers.find(d=>d.id===ACTIVE)) ACTIVE = DB.drawers[0].id;
+  renderTabs(); renderRail(); renderGrid();
+}
+function renderTabs(){
+  $('#dtabs').innerHTML = DB.drawers.map(d=>`
+    <button class="dtab" role="tab" aria-selected="${d.id===ACTIVE}" onclick="switchDrawer('${d.id}')">
+      <span class="lbl2">${d.icon||'📦'} ${esc(d.name)} <span class="n">${DB.items.filter(i=>i.drawerId===d.id).length}</span></span>
+    </button>`).join('')
+    + `<button class="dtab" onclick="openSettings('drawers')" title="Add a drawer"><span class="lbl2">+ Drawer</span></button>`;
+}
+function switchDrawer(id){ ACTIVE=id; FILTERS={}; SEARCH=''; closeSidebar(); renderTabs(); renderRail(); renderGrid(); window.scrollTo({top:0}); }
+
+/* ---------- F. FILTER SIDEBAR + GRID --------------------------------------
+   Filters cascade: picking a value for one field (e.g. Brand: Nike) narrows
+   every OTHER filter down to only the values that actually occur on items
+   matching what's already selected — so once Nike is picked, Model only
+   offers Nike's models, Colour only Nike's colours, and so on. This applies
+   to every filterable field, in every drawer, symmetrically.             */
+let railBound = false;
+function bindRailOnce(){
+  if(railBound) return; railBound = true;
+  $('#q').addEventListener('input', e=>{ SEARCH=e.target.value; renderGrid(); });
+  $('#sort').addEventListener('change', e=>{ SORT=e.target.value; renderGrid(); });
+  $('#clearFiltersBtn').addEventListener('click', clearFilters);
+  $('#openSidebarBtn').addEventListener('click', openSidebar);
+  $('#sbClose').addEventListener('click', closeSidebar);
+  $('#sbScrim').addEventListener('click', closeSidebar);
+  $('#filterGroups').addEventListener('click', e=>{
+    const b = e.target.closest('.fg-opt'); if(!b) return;
+    const key = b.dataset.key, val = b.dataset.val;
+    FILTERS[key] = FILTERS[key]===val ? '' : val;
+    renderRail(); renderGrid();
+  });
+}
+function openSidebar(){ $('#sidebar').classList.add('open'); $('#sbScrim').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeSidebar(){ $('#sidebar').classList.remove('open'); $('#sbScrim').classList.remove('open'); document.body.style.overflow=''; }
+
+function renderRail(){
+  bindRailOnce();
+  const d = drawer(ACTIVE);
+  const base = DB.items.filter(i=>i.drawerId===d.id);
+  const optsFor = f => {
+    const others = Object.entries(FILTERS).filter(([k,v])=>v && k!==f.key);
+    const scoped = others.length ? base.filter(i => others.every(([k,v]) => asArr(i.fields[k]).includes(v))) : base;
+    const vals = new Set();
+    scoped.forEach(i => asArr(i.fields[f.key]).forEach(v=>v&&vals.add(v)));
+    if(FILTERS[f.key]) vals.add(FILTERS[f.key]); // keep the active pick visible even if it'd otherwise drop out
+    return Array.from(vals).sort();
+  };
+  const groups = d.fields.filter(f=>f.filter).map(f=>{
+    const values = optsFor(f);
+    if(!values.length) return '';
+    return `<div class="filtergroup">
+      <span class="fg-label">${esc(f.label)}</span>
+      <div class="fg-opts">
+        ${values.map(v=>{
+          const active = FILTERS[f.key]===v;
+          const dot = f.type==='color' ? `<span class="fg-dot" style="background:${hexOf(v)}"></span>` : '';
+          return `<button type="button" class="fg-opt" data-key="${esc(f.key)}" data-val="${esc(v)}" aria-pressed="${active}">${dot}<span>${esc(v)}</span></button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  $('#filterGroups').innerHTML = groups || `<p class="hint">No filters yet — add a few items first.</p>`;
+
+  $('#q').value = SEARCH;
+  $('#q').placeholder = `Search ${d.name.toLowerCase()}`;
+  $('#sort').value = SORT;
+  $('#clearFiltersBtn').style.display = (Object.values(FILTERS).some(Boolean)||SEARCH) ? '' : 'none';
+  $('#fabLabel').textContent = 'Add ' + (d.noun || 'item');
+}
+function clearFilters(){ FILTERS={}; SEARCH=''; renderRail(); renderGrid(); }
+
+function visibleItems(){
+  const d = drawer(ACTIVE);
+  let list = DB.items.filter(i=>i.drawerId===d.id);
+  const q = SEARCH.trim().toLowerCase();
+  if(q) list = list.filter(i => (i.name+' '+Object.values(i.fields).flat().join(' ')).toLowerCase().includes(q));
+  Object.entries(FILTERS).forEach(([k,v])=>{ if(v) list = list.filter(i => asArr(i.fields[k]).includes(v)); });
+  if(SORT==='az') list.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(SORT==='brand') list.sort((a,b)=>(a.fields.brand||'').localeCompare(b.fields.brand||'') || a.name.localeCompare(b.name));
+  else list.sort((a,b)=>b.createdAt-a.createdAt);
+  return list;
+}
+function thumbHTML(it){
+  const hex = hexOf(it.fields.color);
+  const ow = it.fields.owner;
+  const flag = ow ? `<span class="owner-flag" style="background:${OWNER_COLOR[ow]||'#5A6763'}">${esc(ow)}</span>` : '';
+  const cover = it.images && it.images[0];
+  const inner = cover
+    ? `<img src="${esc(cover)}" alt="${esc(it.name)}" loading="lazy" onerror="this.remove()">`
+    : `<div class="ph" style="background:linear-gradient(145deg,${hex},${hex}CC)">${esc(initials(it.fields.brand||it.name))}</div>`;
+  return `<div class="thumb">${inner}${flag}</div>`;
+}
+function renderGrid(){
+  const d = drawer(ACTIVE), list = visibleItems();
+  const total = DB.items.filter(i=>i.drawerId===d.id).length;
+  $('#count').textContent = total ? `${list.length} of ${total} showing` : '';
+  if(!list.length){
+    $('#grid').innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <h3>${total ? 'Nothing matches those filters' : d.name + ' is empty'}</h3>
+      <p>${total ? 'Loosen a filter or clear the search to see the rest.' : 'Add the first one and it shows up here with its photo and tags.'}</p>
+      <button class="btn btn-primary" onclick="${total?'clearFilters()':'openForm()'}">${total?'Clear filters':'Add '+(d.noun||'item')}</button>
+    </div>`;
+    return;
+  }
+  $('#grid').innerHTML = list.map(it=>{
+    const tags = asArr(it.fields.purpose).slice(0,3).map(p=>`<span class="tag">${esc(p)}</span>`).join('');
+    const meta = [it.fields.brand, it.fields.size].filter(Boolean).join(' · ');
+    return `<button class="item" onclick="openDetail('${it.id}')">
+      ${thumbHTML(it)}
+      <div class="body">
+        <div class="nm">${nameBlock(it)}</div>
+        <div class="meta">${esc(meta)}</div>
+        <div class="tags">
+          ${it.fields.color?`<span class="tag"><i class="dot" style="background:${hexOf(it.fields.color)}"></i>${esc(it.fields.color)}</span>`:''}
+          ${tags}
+        </div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+/* ---------- G. ITEM FORM (add / edit) ------------------------------------- */
+let formPhotos = [];
+
+function fieldHTML(f, val){
+  const id = 'f_'+f.key;
+  if(f.type==='textarea') return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label><textarea class="input" id="${id}">${esc(val||'')}</textarea></div>`;
+  if(f.type==='select'){
+    const opts = Array.from(new Set([...(f.options||[]), val].filter(Boolean)));
+    return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label>
+      <select class="input" id="${id}"><option value="">—</option>${opts.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  }
+  if(f.type==='color'){
+    return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label>
+      <select class="input" id="${id}"><option value="">—</option>${DB.colors.map(c=>`<option ${c.name===val?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>`;
+  }
+  if(f.type==='tags'){
+    const sel = asArr(val);
+    return `<div class="field"><span class="lbl">${esc(f.label)}</span>
+      <div class="chipset" id="${id}">${(f.options||[]).map(o=>`<button type="button" class="chip" aria-pressed="${sel.includes(o)}" onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true'?'false':'true')">${esc(o)}</button>`).join('')}</div></div>`;
+  }
+  return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label><input class="input" id="${id}" value="${esc(val||'')}"></div>`;
+}
+
+function openForm(id){
+  const d = drawer(ACTIVE);
+  const it = id ? DB.items.find(x=>x.id===id) : null;
+  formPhotos = it ? (it.images||[]).slice() : [];
+  const defOwner = it ? it.fields.owner : ME;
+  showModal(`<div class="sheet" role="dialog" aria-modal="true">
+    <header><h2>${it?'Edit':'Add a '+(d.noun||'item')}</h2>
+      <button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
+    <div class="content">
+      <div class="photo-pick">
+        <div class="photo-gallery" id="prev"></div>
+        <div class="photo-acts">
+          <input type="file" id="fileCam" accept="image/*" capture="environment" class="hide" onchange="handleFiles(event)">
+          <input type="file" id="fileLib" accept="image/*" multiple class="hide" onchange="handleFiles(event)">
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('fileCam').click()">📷 Take a photo</button>
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('fileLib').click()">Choose photos</button>
+          <button type="button" class="btn btn-sm" onclick="findPhoto()">Find one online</button>
+          <div class="linkrow">
+            <input class="input" id="f_imageurl" placeholder="…or paste an image link">
+            <button type="button" class="btn btn-sm" onclick="addImageLink()">Add</button>
+          </div>
+          <p class="hint" id="photoHint" style="margin:0">You can add more than one photo per item.</p>
+        </div>
+      </div>
+      <div class="field"><label class="lbl" for="f_name">Name</label>
+        <input class="input" id="f_name" value="${esc(it?it.name:'')}" placeholder="e.g. Adidas Dropset"></div>
+      ${d.fields.map(f=>fieldHTML(f, it ? it.fields[f.key] : (f.key==='owner'?defOwner:''))).join('')}
+    </div>
+    <footer>
+      ${it?`<button class="btn btn-danger btn-sm" onclick="removeItem('${it.id}')">Delete</button>`:''}
+      <span class="grow"></span>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem('${it?it.id:''}')">${it?'Save changes':'Add to '+esc(d.name)}</button>
+    </footer>
+  </div>`);
+  drawPrev();
+}
+function drawPrev(){
+  const p = $('#prev'); if(!p) return;
+  if(!formPhotos.length){ p.innerHTML = `<div class="photo-empty">No photos yet — add one below</div>`; return; }
+  p.innerHTML = formPhotos.map((src,i)=>`<div class="photo-thumb"><img src="${esc(src)}" alt="" onerror="this.parentElement.style.display='none'"><button type="button" class="rm" title="Remove" onclick="removePhoto(${i})">✕</button></div>`).join('');
+}
+function removePhoto(i){ formPhotos.splice(i,1); drawPrev(); }
+function addImageLink(){
+  const el = $('#f_imageurl'); const v = (el.value||'').trim();
+  if(!v){ toast('Paste a link first.'); return; }
+  formPhotos.push(v); el.value=''; drawPrev();
+}
+/* Resize + compress before storing, so photos captured on a phone camera
+   (often several MB each) stay well inside the size limit for local/shared
+   storage. Ramps quality down further if a shot is still large after resizing. */
+const PHOTO_MAX_DIM = 1100, PHOTO_MAX_BYTES = 320*1024;
+function compressDataUrl(dataUrl){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, PHOTO_MAX_DIM/Math.max(img.width,img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1,Math.round(img.width*sc)); c.height = Math.max(1,Math.round(img.height*sc));
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      let q = 0.82, out = c.toDataURL('image/jpeg', q);
+      while(out.length*0.75 > PHOTO_MAX_BYTES && q > 0.35){ q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      resolve(out);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+function handleFiles(e){
+  const files = Array.from(e.target.files || []); if(!files.length) return;
+  const hint = $('#photoHint'); if(hint) hint.textContent = `Compressing ${files.length>1?files.length+' photos':'photo'}…`;
+  Promise.all(files.map(file => new Promise(res=>{
+    const r = new FileReader();
+    r.onload = () => compressDataUrl(r.result).then(res);
+    r.readAsDataURL(file);
+  }))).then(list=>{
+    formPhotos.push(...list);
+    drawPrev();
+    if(hint) hint.textContent = 'You can add more than one photo per item.';
+    e.target.value = '';
+  });
+}
+function findPhoto(){
+  const bits = [$('#f_name')?.value, $('#f_brand')?.value, $('#f_model')?.value, $('#f_color')?.value].filter(Boolean);
+  const q = bits.join(' ') || drawer(ACTIVE).name;
+  window.open('https://www.google.com/search?tbm=isch&q='+encodeURIComponent(q), '_blank', 'noopener');
+  toast('Save the image, then use Choose photos.');
+}
+function readForm(d){
+  const out = {};
+  d.fields.forEach(f=>{
+    if(f.type==='tags') out[f.key] = $$('#f_'+f.key+' .chip[aria-pressed="true"]').map(b=>b.textContent.trim());
+    else out[f.key] = ($('#f_'+f.key)?.value || '').trim();
+  });
+  return out;
+}
+function saveItem(id){
+  const d = drawer(ACTIVE);
+  const name = $('#f_name').value.trim();
+  if(!name){ toast('Give it a name first.'); $('#f_name').focus(); return; }
+  const fields = readForm(d);
+  if(id){
+    const it = DB.items.find(x=>x.id===id);
+    Object.assign(it, {name, fields, images:formPhotos.slice()});
+  }else{
+    DB.items.push({id:uid(), drawerId:d.id, name, images:formPhotos.slice(), fields, createdAt:Date.now()});
+  }
+  save(); closeModal(); renderTabs(); renderRail(); renderGrid();
+  toast(id ? 'Saved.' : `Added to ${d.name}.`);
+}
+function removeItem(id){
+  const it = DB.items.find(x=>x.id===id);
+  if(!confirm(`Delete "${it.name}"? This cannot be undone.`)) return;
+  DB.items = DB.items.filter(x=>x.id!==id);
+  save(); closeModal(); renderTabs(); renderRail(); renderGrid();
+  toast('Deleted.');
+}
+
+/* ---------- H. ITEM DETAIL ------------------------------------------------ */
+let DETAIL_IMAGES = [];
+function openDetail(id){
+  const it = DB.items.find(x=>x.id===id); if(!it) return;
+  const d = drawer(it.drawerId);
+  const hex = hexOf(it.fields.color);
+  const imgs = (it.images||[]).filter(Boolean);
+  DETAIL_IMAGES = imgs;
+  const hero = imgs.length
+    ? `<img src="${esc(imgs[0])}" alt="${esc(it.name)}" id="heroImg">`
+    : `<div class="ph" style="position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(145deg,${hex},${hex}CC);font-family:var(--font-display);font-size:2.2rem;color:#fff">${esc(initials(it.fields.brand||it.name))}</div>`;
+  const thumbs = imgs.length>1 ? `<div class="detail-thumbs">${imgs.map((src,i)=>`<button type="button" class="dthumb${i===0?' active':''}" onclick="switchDetailPhoto(${i})"><img src="${esc(src)}" alt=""></button>`).join('')}</div>` : '';
+  const rows = d.fields.map(f=>{
+    const v = it.fields[f.key];
+    if(!v || (Array.isArray(v)&&!v.length)) return '';
+    let disp = Array.isArray(v) ? v.map(x=>`<span class="tag">${esc(x)}</span>`).join(' ')
+      : f.type==='color' ? `<span class="tag"><i class="dot" style="background:${hexOf(v)}"></i>${esc(v)}</span>`
+      : f.key==='owner' ? `<span class="tag tag-owner" style="background:${OWNER_COLOR[v]||'#5A6763'}">${esc(v)}</span>`
+      : esc(v);
+    return `<dt>${esc(f.label)}</dt><dd>${disp}</dd>`;
+  }).join('');
+  showModal(`<div class="sheet" role="dialog" aria-modal="true">
+    <header><h2>${nameBlock(it)}</h2><button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
+    <div class="content">
+      <div class="detail-hero">${hero}</div>
+      ${thumbs}
+      <dl class="spec">${rows}</dl>
+    </div>
+    <footer>
+      <button class="btn btn-danger btn-sm" onclick="removeItem('${it.id}')">Delete</button>
+      <span class="grow"></span>
+      <button class="btn btn-primary" onclick="closeModal();openForm('${it.id}')">Edit</button>
+    </footer>
+  </div>`);
+}
+function switchDetailPhoto(i){
+  const img = $('#heroImg'); if(img && DETAIL_IMAGES[i]) img.src = DETAIL_IMAGES[i];
+  $$('.dthumb').forEach((b,idx)=>b.classList.toggle('active', idx===i));
+}
+
+/* ---------- I. SETTINGS --------------------------------------------------- */
+let setTab = 'drawers';
+function openSettings(tab){ setTab = tab || 'drawers'; renderSettings(); }
+function renderSettings(){
+  showModal(`<div class="sheet" role="dialog" aria-modal="true">
+    <header><h2>Settings</h2><button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
+    <div class="content">
+      <div class="seg" role="tablist">
+        ${[['drawers','Drawers'],['lists','Lists'],['people','People'],['sync','Sync'],['data','Data']].map(([k,l])=>
+          `<button role="tab" aria-selected="${setTab===k}" onclick="setTab='${k}';renderSettings()">${l}</button>`).join('')}
+      </div>
+      <div id="setBody">${settingsBody()}</div>
+    </div>
+  </div>`);
+}
+function settingsBody(){
+  if(setTab==='drawers'){
+    return `${DB.drawers.map(d=>`
+      <div class="listrow">
+        <span style="font-size:1.35rem">${d.icon||'📦'}</span>
+        <span class="gr"><span class="t">${esc(d.name)}</span><br>
+          <span class="s">${DB.items.filter(i=>i.drawerId===d.id).length} items · one ${esc(d.noun||'item')}</span></span>
+        <button class="btn btn-sm" onclick="renameDrawer('${d.id}')">Rename</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDrawer('${d.id}')">Delete</button>
+      </div>`).join('')}
+      <div style="margin-top:1.2rem;padding-top:1.1rem;border-top:1.5px solid var(--line)">
+        <h3 style="font-size:1.05rem;margin-bottom:.7rem">New drawer</h3>
+        <div class="row2">
+          <div class="field"><label class="lbl" for="nd_name">Name</label><input class="input" id="nd_name" placeholder="Watches"></div>
+          <div class="field"><label class="lbl" for="nd_icon">Icon</label><input class="input" id="nd_icon" placeholder="⌚" maxlength="3"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label class="lbl" for="nd_noun">One of them is called</label><input class="input" id="nd_noun" placeholder="watch"></div>
+          <div class="field"><label class="lbl" for="nd_tpl">Start from</label>
+            <select class="input" id="nd_tpl">
+              <option value="blank">Simple fields</option>
+              <option value="shoes">Same fields as Shoes</option>
+              <option value="bags">Same fields as Bags</option>
+              <option value="tumblers">Same fields as Tumblers</option>
+            </select></div>
+        </div>
+        <button class="btn btn-primary" onclick="addDrawer()">Add drawer</button>
+      </div>`;
+  }
+  if(setTab==='lists'){
+    const d = drawer(ACTIVE);
+    return `<p class="hint" style="margin:0 0 .9rem">Editing the dropdown choices for <strong>${esc(d.name)}</strong>. Switch drawers first to edit another one. One choice per line.</p>
+      ${d.fields.filter(f=>f.type==='select'||f.type==='tags').map(f=>`
+        <div class="field"><label class="lbl" for="op_${f.key}">${esc(f.label)}</label>
+          <textarea class="input" id="op_${f.key}">${esc((f.options||[]).join('\n'))}</textarea></div>`).join('')}
+      <div class="field"><label class="lbl" for="op_colors">Colours <span style="font-weight:400">(name = hex)</span></label>
+        <textarea class="input" id="op_colors" style="min-height:130px">${esc(DB.colors.map(c=>c.name+' = '+c.hex).join('\n'))}</textarea></div>
+      <button class="btn btn-primary" onclick="saveLists()">Save lists</button>`;
+  }
+  if(setTab==='people'){
+    return `${Object.keys(DB.users).map(n=>`
+      <div class="listrow">
+        <span class="avatar" style="background:${OWNER_COLOR[n]||'#5A6763'}">${initials(n)}</span>
+        <span class="gr"><span class="t">${esc(n)}</span><br><span class="s">${DB.items.filter(i=>i.fields.owner===n).length} things owned</span></span>
+        <button class="btn btn-sm" onclick="changePin('${esc(n)}')">Change code</button>
+      </div>`).join('')}
+      <p class="hint" style="margin-top:1rem">The code keeps the cabinet private on a shared phone. It is not bank-grade security — anyone who can open this file's source can read the data.</p>`;
+  }
+  if(setTab==='sync'){
+    const cfg = Cloud.config();
+    const other = OWNERS.filter(o=>o!==ME && DB.users[o])[0];
+    const live = Cloud.isReady();
+    return `<div class="listrow" style="align-items:flex-start">
+        <span class="dot" style="width:.8rem;height:.8rem;margin-top:.42rem;background:${live?'var(--ok)':'var(--danger)'}"></span>
+        <span class="gr"><span class="t">${live?'Syncing':'Not syncing'}</span><br>
+          <span class="s">${esc(Cloud.statusText())}</span></span>
+      </div>
+      <p class="hint" style="margin:1rem 0">This app already points at a shared Firebase project${other?', so anything you add shows up for '+esc(other)+' too':''} — nothing to set up. The box below is only there if you ever need to point it somewhere else.</p>
+      <div class="field"><label class="lbl" for="cf_config">Firebase config (advanced)</label>
+        <textarea class="input" id="cf_config" style="min-height:120px;font-family:monospace;font-size:.8rem" placeholder='{ "apiKey": "...", "projectId": "..." }'>${cfg.apiKey ? esc(JSON.stringify(cfg, null, 2)) : ''}</textarea>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveCloudConfig()">Save &amp; connect</button>
+        ${cfg.apiKey
+          ? `<button class="btn btn-danger btn-sm" onclick="disconnectCloud()">Stop syncing on this device</button>`
+          : `<button class="btn btn-sm" onclick="reconnectCloud()">Turn syncing back on</button>`}
+      </div>`;
+  }
+  const kb = Math.round(Store.bytes()/1024);
+  const pct = Math.min(100, Math.round(kb/5120*100));
+  return `<div class="listrow"><span class="gr"><span class="t">Save a backup file</span><br>
+      <span class="s">Everything, as one JSON file you can keep or move to another phone.</span></span>
+      <button class="btn btn-sm" onclick="exportData()">Export</button></div>
+    <div class="listrow"><span class="gr"><span class="t">Restore from a backup</span><br>
+      <span class="s">Replaces what is here now.</span></span>
+      <input type="file" id="imp" accept="application/json" class="hide" onchange="importData(event)">
+      <button class="btn btn-sm" onclick="document.getElementById('imp').click()">Import</button></div>
+    <div class="listrow"><span class="gr"><span class="t">Space used</span><br>
+      <span class="s">About ${kb} KB of roughly 5 MB. Photos take the most room.</span>
+      <span class="bar"><i style="width:${pct}%"></i></span></span></div>
+    <div class="listrow"><span class="gr"><span class="t">Start over</span><br>
+      <span class="s">Clears everything and puts the starter list back.</span></span>
+      <button class="btn btn-danger btn-sm" onclick="resetAll()">Reset</button></div>
+    <p class="hint" style="margin-top:1rem">Saving in: ${Store.mode} storage${Cloud.isReady()?' + shared cloud sync':''}. ${Cloud.isReady() ? 'Also backed up to the shared database — see Sync.' : 'Data stays on this device unless you connect Sync.'} Export a backup before clearing your browser either way.</p>`;
+}
+function renameDrawer(id){
+  const d = drawer(id);
+  const n = prompt('Drawer name', d.name); if(n===null) return;
+  const ic = prompt('Icon', d.icon||'📦'); if(ic===null) return;
+  d.name = n.trim()||d.name; d.icon = ic.trim()||d.icon;
+  save(); renderTabs(); renderRail(); renderSettings();
+}
+function deleteDrawer(id){
+  if(DB.drawers.length<=1){ toast('Keep at least one drawer.'); return; }
+  const d = drawer(id), n = DB.items.filter(i=>i.drawerId===id).length;
+  if(!confirm(`Delete "${d.name}" and its ${n} item${n===1?'':'s'}?`)) return;
+  DB.drawers = DB.drawers.filter(x=>x.id!==id);
+  DB.items = DB.items.filter(i=>i.drawerId!==id);
+  if(ACTIVE===id) ACTIVE = DB.drawers[0].id;
+  save(); renderTabs(); renderRail(); renderGrid(); renderSettings();
+  toast('Drawer deleted.');
+}
+function addDrawer(){
+  const name = $('#nd_name').value.trim();
+  if(!name){ toast('Name the drawer first.'); return; }
+  const tpl = $('#nd_tpl').value;
+  const d = {id:uid(), name, icon:$('#nd_icon').value.trim()||'📦', noun:$('#nd_noun').value.trim()||'item', fields:clone(TEMPLATES[tpl])};
+  DB.drawers.push(d); ACTIVE = d.id;
+  save(); renderTabs(); renderRail(); renderGrid(); renderSettings();
+  toast(`${name} added.`);
+}
+function saveLists(){
+  const d = drawer(ACTIVE);
+  d.fields.forEach(f=>{
+    if(f.type==='select'||f.type==='tags'){
+      const el = $('#op_'+f.key); if(el) f.options = el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+    }
+  });
+  const cols = $('#op_colors').value.split('\n').map(l=>{
+    const [n,h] = l.split('=').map(s=>(s||'').trim());
+    return n ? {name:n, hex:/^#[0-9a-f]{3,8}$/i.test(h||'') ? h : '#B9C0BA'} : null;
+  }).filter(Boolean);
+  if(cols.length) DB.colors = cols;
+  save(); renderRail(); renderGrid(); toast('Lists saved.');
+}
+function changePin(name){
+  const p = prompt(`New 4-digit code for ${name}`);
+  if(p===null) return;
+  if(!/^\d{4}$/.test(p)){ toast('Use exactly four digits.'); return; }
+  DB.users[name].pin = hash(p); save(); toast('Code changed.');
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cabinet-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup saved to your downloads.');
+}
+function importData(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const obj = JSON.parse(r.result);
+      if(!obj.items || !obj.drawers) throw 0;
+      DB = obj; ACTIVE = DB.drawers[0].id;
+      save(); closeModal(); renderTabs(); renderRail(); renderGrid();
+      toast('Backup restored.');
+    }catch(err){ toast('That file is not a Cabinet backup.'); }
+  };
+  r.readAsText(f);
+}
+function resetAll(){
+  if(!confirm('Clear everything and start from the starter list? Export a backup first if you want to keep this.')) return;
+  DB = seed(); ACTIVE = 'shoes';
+  save(); closeModal(); renderTabs(); renderRail(); renderGrid();
+  toast('Reset done.');
+}
+
+/* ---------- J. BOOT ------------------------------------------------------- */
+(async function boot(){
+  DB = await Store.load();
+  if(!DB || !DB.items || !DB.drawers) { DB = seed(); await Store.save(DB); }
+  if(!DB.colors) DB.colors = COLORS.slice();
+  migrate();
+  ACTIVE = DB.drawers[0].id;
+  buildPad(); renderPlates();
+
+  // Optional shared backend: if Settings > Sync has been configured, connect,
+  // pull the latest shared copy, and keep listening for the other person's edits.
+  Cloud.connect(remoteDB => {
+    if(!remoteDB || !remoteDB.items || !remoteDB.drawers) return;
+    DB = remoteDB;
+    if(!DB.colors) DB.colors = COLORS.slice();
+    migrate();
+    Store.save(DB);
+    if(ME && !$('#modals').innerHTML){ renderTabs(); renderRail(); renderGrid(); toast('Updated from the shared cabinet.'); }
+  }).then(async connected => {
+    if(!connected) return;
+    const remote = await Cloud.pull();
+    if(remote && remote.items && remote.drawers){
+      DB = remote; if(!DB.colors) DB.colors = COLORS.slice(); migrate();
+      await Store.save(DB);
+    } else {
+      await Cloud.push(DB); // first connection — seed the shared database from this device
+    }
+    if(!DB.drawers.find(d=>d.id===ACTIVE)) ACTIVE = DB.drawers[0].id;
+    if(ME){ renderTabs(); renderRail(); renderGrid(); }
+    renderPlates();
+  });
+
+  // installable manifest, generated inline so this stays a single file
+  try{
+    const man = {name:'Cabinet', short_name:'Cabinet', start_url:'.', display:'standalone',
+      background_color:'#14332E', theme_color:'#14332E',
+      icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314332E'/%3E%3Crect x='14' y='18' width='36' height='12' rx='3' fill='%23C99A46'/%3E%3Crect x='14' y='36' width='36' height='12' rx='3' fill='%23C99A46'/%3E%3C/svg%3E", sizes:'512x512', type:'image/svg+xml'}]};
+    const l = document.createElement('link'); l.rel='manifest';
+    l.href = URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/json'}));
+    document.head.appendChild(l);
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
