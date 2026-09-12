@@ -512,7 +512,9 @@ const DEFAULT_FIREBASE = {
 
 const Cloud = (() => {
   const CKEY = 'cabinet.cloud.v1';
-  let app = null, db = null, unsub = null, ready = false, lastPushedAt = 0;
+  /* `live` only goes true once Firestore has actually answered — connecting is
+     not the same as being allowed in, and rules denials show up only here. */
+  let app = null, db = null, unsub = null, live = false, lastError = '';
 
   /* Settings > Sync overrides the built-in project; "Disconnect" writes an
      explicit off-switch so this device stops syncing entirely. */
@@ -545,11 +547,17 @@ const Cloud = (() => {
       app = window.firebase.apps && window.firebase.apps.length ? window.firebase.apps[0] : window.firebase.initializeApp(cfg);
       db = window.firebase.firestore(app);
       unsub = db.collection('cabinet').doc('main').onSnapshot(snap=>{
+        live = true; lastError = '';
         if(snap.metadata.hasPendingWrites) return; // that's our own write echoing back — ignore
         const d = snap.data();
         if(d && d.data) onRemoteChange(d.data);
-      }, err => console.warn(err));
-      ready = true;
+      }, err => {
+        live = false;
+        lastError = (err && err.code) || 'unknown';
+        console.warn(err);
+        // if the Sync tab happens to be open, correct what it's claiming
+        if($('#cf_config') && typeof renderSettings === 'function') renderSettings();
+      });
       return true;
     }catch(e){ console.warn(e); return false; }
   }
@@ -560,25 +568,35 @@ const Cloud = (() => {
       return snap.exists ? (snap.data().data || null) : null;
     }catch(e){ console.warn(e); return null; }
   }
-  async function push(dbObj){
+  async function push(dbObj, quiet){
     if(!db) return;
     try{
-      lastPushedAt = Date.now();
       await db.collection('cabinet').doc('main').set({data:dbObj, updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});
-    }catch(e){ console.warn(e); toast('Could not sync to the shared cabinet — saved on this device only.'); }
+      live = true; lastError = '';
+    }catch(e){
+      live = false; lastError = (e && e.code) || 'unknown';
+      console.warn(e);
+      if(!quiet) toast(lastError==='permission-denied'
+        ? 'Saved here, but the shared copy refused the write — check the Firestore rules.'
+        : 'Saved here, but could not reach the shared cabinet.');
+    }
   }
   function disconnect(){
     if(unsub) unsub();
-    app=null; db=null; unsub=null; ready=false;
+    app=null; db=null; unsub=null; live=false;
     localStorage.setItem(CKEY, JSON.stringify({disabled:true}));
   }
   function statusText(){
     const cfg = config();
     if(!cfg.apiKey) return 'Turned off here — this device keeps its own copy and nothing travels either way.';
-    if(ready) return 'Connected to ' + cfg.projectId + '. Anything either of you changes shows up on the other phone within a second.';
-    return 'Could not reach ' + cfg.projectId + '. Usually that means no internet, or the Firestore rules are still blocking access.';
+    if(live) return 'Connected to ' + cfg.projectId + '. Anything either of you changes shows up on the other phone within a second.';
+    if(lastError === 'permission-denied')
+      return 'Reached ' + cfg.projectId + ', but Firestore is refusing every read and write. The security rules still need publishing: Firebase console > Firestore Database > Rules tab > allow read, write on /cabinet/{doc} > Publish.';
+    if(lastError) return 'Could not reach ' + cfg.projectId + ' (' + lastError + '). Usually that means no internet right now.';
+    return 'Connecting to ' + cfg.projectId + '…';
   }
-  return { config, setConfig, parseConfigText, connect, pull, push, disconnect, statusText, isReady:()=>ready };
+  return { config, setConfig, parseConfigText, connect, pull, push, disconnect, statusText,
+           isLive:()=>live, hasClient:()=>!!db };
 })();
 
 function saveCloudConfig(){
@@ -711,7 +729,7 @@ const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;'
 /* soft, non-cryptographic code hash — this is a privacy lock, not a vault */
 function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0).toString(36); }
 function hexOf(name){ const c=(DB?.colors||COLORS).find(c=>c.name===name); return c?c.hex:'#B9C0BA'; }
-function save(){ Store.save(DB); if(Cloud.isReady()) Cloud.push(DB); }
+function save(){ Store.save(DB); if(Cloud.hasClient()) Cloud.push(DB); }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400); }
 function drawer(id){ return DB.drawers.find(d=>d.id===id) || DB.drawers[0]; }
 function initials(n){ return (n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
@@ -1160,7 +1178,7 @@ function settingsBody(){
   if(setTab==='sync'){
     const cfg = Cloud.config();
     const other = OWNERS.filter(o=>o!==ME && DB.users[o])[0];
-    const live = Cloud.isReady();
+    const live = Cloud.isLive();
     return `<div class="listrow" style="align-items:flex-start">
         <span class="dot" style="width:.8rem;height:.8rem;margin-top:.42rem;background:${live?'var(--ok)':'var(--danger)'}"></span>
         <span class="gr"><span class="t">${live?'Syncing':'Not syncing'}</span><br>
@@ -1192,7 +1210,7 @@ function settingsBody(){
     <div class="listrow"><span class="gr"><span class="t">Start over</span><br>
       <span class="s">Clears everything and puts the starter list back.</span></span>
       <button class="btn btn-danger btn-sm" onclick="resetAll()">Reset</button></div>
-    <p class="hint" style="margin-top:1rem">Saving in: ${Store.mode} storage${Cloud.isReady()?' + shared cloud sync':''}. ${Cloud.isReady() ? 'Also backed up to the shared database — see Sync.' : 'Data stays on this device unless you connect Sync.'} Export a backup before clearing your browser either way.</p>`;
+    <p class="hint" style="margin-top:1rem">Saving in: ${Store.mode} storage${Cloud.isLive()?' + shared cloud sync':''}. ${Cloud.isLive() ? 'Also backed up to the shared database — see Sync.' : 'Not reaching the shared database right now — see Sync.'} Export a backup before clearing your browser either way.</p>`;
 }
 function renameDrawer(id){
   const d = drawer(id);
@@ -1294,7 +1312,7 @@ function resetAll(){
       DB = remote; if(!DB.colors) DB.colors = COLORS.slice(); migrate();
       await Store.save(DB);
     } else {
-      await Cloud.push(DB); // first connection — seed the shared database from this device
+      await Cloud.push(DB, true); // first connection — seed the shared database, quietly
     }
     if(!DB.drawers.find(d=>d.id===ACTIVE)) ACTIVE = DB.drawers[0].id;
     if(ME){ renderTabs(); renderRail(); renderGrid(); }
