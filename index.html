@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cabinet — Pearl &amp; Char</title>
-<meta name="description" content="A shared cabinet for the things Pearl and Char own.">
+<title>Cabinet</title>
+<meta name="description" content="Everything the two of you own, in one place.">
 
 <!-- Installable on phones: Add to Home Screen gives you a standalone app window -->
 <meta name="theme-color" content="#14332E">
@@ -36,8 +36,8 @@
   --teal-lift:#1E4B43;    /* hover state of teal */
   --brass:#C99A46;        /* hardware — active tab, focus, accents */
   --brass-deep:#A97E30;
-  --pearl:#6B4E9E;        /* owner tag: Pearl */
-  --char:#B4563F;         /* owner tag: Char */
+  --pearl:#6B4E9E;        /* owner tag: first user */
+  --char:#B4563F;         /* owner tag: second user */
   --danger:#A33427;
   --ok:#2C6E52;
 
@@ -114,7 +114,8 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   font-size:.76rem;font-weight:700;background:rgba(20,32,29,.06);color:var(--ink-soft);
 }
 .tag-owner{color:#fff}
-.dot{width:.62rem;height:.62rem;border-radius:50%;border:1px solid rgba(0,0,0,.18);flex:none}
+.dot{display:inline-block;vertical-align:baseline;width:.62rem;height:.62rem;border-radius:50%;
+  border:1px solid rgba(0,0,0,.18);flex:none;margin-right:.28rem;position:relative;top:1px}
 
 /* ============================================================================
    3. LOCK SCREEN — the cabinet face
@@ -251,7 +252,39 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
 .thumb{aspect-ratio:4/3;background:#F3F5F1;position:relative;overflow:hidden}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .thumb .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:1.5rem;color:rgba(255,255,255,.92);text-shadow:0 1px 6px rgba(0,0,0,.22)}
-.owner-flag{position:absolute;top:.5rem;left:.5rem;padding:.16rem .5rem;border-radius:6px;font-size:.72rem;font-weight:700;color:#fff;backdrop-filter:blur(3px)}
+/* whose it is, shown as a colour only — no name written on the photo */
+.owner-dot{position:absolute;top:.5rem;left:.5rem;width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(20,32,29,.35)}
+
+/* lists managed inline in the form */
+.lblrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin:0 0 .3rem 2px}
+.linklike{font-size:.78rem;font-weight:700;color:var(--ink-soft);text-decoration:underline;text-underline-offset:2px;background:none;padding:0}
+.linklike:hover{color:var(--ink)}
+.listeditor{background:#F4F6F2;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:.6rem;margin-bottom:.5rem}
+.chip-add{border-style:dashed;font-weight:700}
+
+/* lifespan read-out */
+.lifebox{background:#F4F6F2;border:1.5px solid var(--line);border-radius:var(--r-md);padding:.8rem .9rem}
+.lifebox-h{font-family:var(--font-display);font-weight:700;font-size:.95rem;margin-bottom:.5rem}
+.lifegrid{display:grid;grid-template-columns:auto 1fr;gap:.25rem .8rem;margin:0;font-size:.9rem}
+.lifegrid dt{color:var(--ink-faint);font-weight:700;font-size:.8rem;padding-top:.1rem}
+.lifegrid dd{margin:0}
+.lifeflag{margin:.6rem 0 0;padding:.5rem .6rem;border-radius:var(--r-sm);font-size:.85rem;
+  background:rgba(201,154,70,.16);color:#6B4E12}
+.lifeflag-warn{background:rgba(163,52,39,.1);color:var(--danger)}
+.tag-age{background:rgba(20,32,29,.05);color:var(--ink-faint)}
+
+/* chat */
+.chat-dot{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 3px;border-radius:999px;
+  background:var(--brass);color:#241A06;font-size:.66rem;font-weight:700;display:grid;place-items:center;line-height:1}
+.msg{display:flex;margin-bottom:.5rem}
+.msg-mine{justify-content:flex-end}
+.msg-b{max-width:78%;background:#F1F4EF;border:1.5px solid var(--line);border-radius:var(--r-md);padding:.45rem .65rem}
+.msg-mine .msg-b{background:var(--teal);border-color:var(--teal);color:#EAF0EC}
+.msg-new{box-shadow:0 0 0 2px rgba(201,154,70,.45)}
+.msg-who{display:block;font-size:.72rem;font-weight:700;margin-bottom:.1rem}
+.msg-t{display:block;font-size:.92rem;white-space:pre-wrap;word-break:break-word}
+.msg-at{display:block;font-size:.68rem;opacity:.6;margin-top:.2rem;text-align:right}
 .item .body{padding:.65rem .7rem .75rem}
 .item .nm{margin-bottom:.32rem}
 .item .meta{font-size:.8rem;color:var(--ink-soft);margin-bottom:.4rem}
@@ -379,6 +412,10 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
         <span>Cabinet</span>
       </div>
       <div class="who-chip"><span class="avatar" id="meAvatar"></span><span id="meName"></span></div>
+      <button class="icon-btn" id="chatBtn" title="Chat" onclick="openChat()" aria-label="Chat" style="position:relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-11.6 7.1L4 20.5l1.4-5A8 8 0 1121 12z"/></svg>
+        <span class="chat-dot hide" id="chatDot"></span>
+      </button>
       <button class="icon-btn hide" id="installBtn" title="Install this app" onclick="installApp()" aria-label="Install this app">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 11l5 5 5-5M5 20h14"/></svg>
       </button>
@@ -505,7 +542,7 @@ const Store = (() => {
    for a shoe cabinet; worth tightening (Firebase Auth) before anything more
    personal goes in here.
    ========================================================================= */
-/* Pearl's Firebase project, baked in so both phones sync with nothing to set
+/* The shared Firebase project, baked in so both phones sync with nothing to set
    up. Firebase web keys are identifiers, not secrets — they're meant to sit in
    client code; what actually guards the data is the Firestore rules. */
 const DEFAULT_FIREBASE = {
@@ -588,9 +625,25 @@ const Cloud = (() => {
         : 'Saved here, but could not reach the shared cabinet.');
     }
   }
+  /* Chat lives in its own document so a busy conversation never bloats — or
+     collides with — the cabinet itself. Same /cabinet/{doc} rule covers it. */
+  let unsubChat = null;
+  function watchChat(onMessages){
+    if(!db) return;
+    if(unsubChat) unsubChat();
+    unsubChat = db.collection('cabinet').doc('chat').onSnapshot(snap=>{
+      const d = snap.data();
+      onMessages((d && d.messages) || []);
+    }, err => console.warn(err));
+  }
+  async function pushChat(messages){
+    if(!db) throw new Error('offline');
+    await db.collection('cabinet').doc('chat').set({messages, updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});
+  }
   function disconnect(){
     if(unsub) unsub();
-    app=null; db=null; unsub=null; live=false;
+    if(unsubChat) unsubChat();
+    app=null; db=null; unsub=null; unsubChat=null; live=false;
     localStorage.setItem(CKEY, JSON.stringify({disabled:true}));
   }
   function statusText(){
@@ -603,7 +656,7 @@ const Cloud = (() => {
     return 'Connecting to ' + cfg.projectId + '…';
   }
   return { config, setConfig, parseConfigText, connect, pull, push, disconnect, statusText,
-           isLive:()=>live, hasClient:()=>!!db };
+           watchChat, pushChat, isLive:()=>live, hasClient:()=>!!db };
 })();
 
 function saveCloudConfig(){
@@ -640,8 +693,10 @@ const COLORS = [
   {name:'Pink',hex:'#D96A94'},{name:'Red',hex:'#C0392B'},{name:'Beige',hex:'#D8C4A6'},
   {name:'Brown',hex:'#7A5330'},{name:'Silver',hex:'#C3C7CB'},{name:'Multi',hex:'#9B7FB8'}
 ];
-const OWNERS = ['Pearl','Char','Shared'];
-const OWNER_COLOR = {Pearl:'#6B4E9E', Char:'#B4563F', Shared:'#2C6E52'};
+const OWNERS = ['User 1','User 2','Shared'];
+const OWNER_COLOR = {'User 1':'#6B4E9E', 'User 2':'#B4563F', Shared:'#2C6E52'};
+/* Earlier versions stored real names; everything is generic now. */
+const LEGACY_USERS = {Pearl:'User 1', Char:'User 2'};
 
 const SHOE_FIELDS = [
   {key:'brand', label:'Brand', type:'select', filter:true, options:['Adidas','Nike','Asics','Onitsuka Tiger','New Balance','Hoka','Puma','Skechers','Other']},
@@ -650,6 +705,7 @@ const SHOE_FIELDS = [
   {key:'size', label:'Size', type:'text', filter:true},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'purchased', label:'Bought', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
 const BAG_FIELDS = [
@@ -658,6 +714,7 @@ const BAG_FIELDS = [
   {key:'size', label:'Size', type:'text', filter:true},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'purchased', label:'Bought', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
 const TUMBLER_FIELDS = [
@@ -666,6 +723,7 @@ const TUMBLER_FIELDS = [
   {key:'size', label:'Capacity', type:'text', filter:true},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'purchased', label:'Bought', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
 const BLANK_FIELDS = [
@@ -673,6 +731,7 @@ const BLANK_FIELDS = [
   {key:'purpose', label:'Category', type:'tags', filter:true, options:['Everyday','Occasion']},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
+  {key:'purchased', label:'Bought', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
 const TEMPLATES = {shoes:SHOE_FIELDS, bags:BAG_FIELDS, tumblers:TUMBLER_FIELDS, blank:BLANK_FIELDS};
@@ -695,7 +754,7 @@ function seed(){
   const s = (name,f,images) => ({id:uid(), drawerId:'shoes', name, images:images||[], fields:f, createdAt:Date.now()});
   return {
     version:1,
-    users:{ Pearl:{pin:hash('1111')}, Char:{pin:hash('2222')} },
+    users:{ 'User 1':{pin:hash('1111')}, 'User 2':{pin:hash('2222')} },
     colors:COLORS.slice(),
     drawers:[
       {id:'shoes',    name:'Shoes',    icon:'👟', noun:'pair',   fields:clone(SHOE_FIELDS)},
@@ -703,25 +762,149 @@ function seed(){
       {id:'tumblers', name:'Tumblers', icon:'🥤', noun:'tumbler',fields:clone(TUMBLER_FIELDS)}
     ],
     items:[
-      s('Adidas Dropset',      {brand:'Adidas', model:'Dropset',        purpose:['Gym','Hybrid'],  size:'7.5 US W', color:'Purple',       owner:'Pearl', notes:'Adizero Dropset Pro — Frozen Purple / Silver Metallic / Cloud White. Flat, stable sole — lifting days.'}, DROPSET_IMAGES),
-      s('Adidas Adizero Boston',{brand:'Adidas',model:'Adizero Boston', purpose:['Running'],       size:'7.5 US W', color:'Blue',         owner:'Char',  notes:'Tempo and race-pace runs.'}),
-      s('Nike Quest 6',        {brand:'Nike',   model:'Quest 6',        purpose:['Running','Walking'],size:'7.5 US W',color:'Black',      owner:'Pearl', notes:'Black / Iron Grey / White. Daily easy miles.'}, QUEST6_IMAGES),
-      s('Asics Gel-Nimbus',    {brand:'Asics',  model:'Gel-Nimbus',     purpose:['Running'],       size:'7.5 US W', color:'Green/Blue',   owner:'Pearl', notes:'Max cushion, long runs.'}),
-      s('Asics Gel-Kayano',    {brand:'Asics',  model:'Gel-Kayano',     purpose:['Running'],       size:'7.5 US W', color:'Dirty white',  owner:'Char',  notes:'Stability trainer.'}),
-      s('Onitsuka Tiger Mexico 66',{brand:'Onitsuka Tiger',model:'Mexico 66',purpose:['Walking','Office','Occasion'],size:'7.5 US W',color:'Classic blue',owner:'Pearl',notes:'Classic blue with the red stripe.'}),
-      {id:uid(),drawerId:'bags',name:'Sample 1',images:[],fields:{brand:'Other',purpose:['Luggage'],size:'',color:'Black',owner:'Pearl',notes:'Replace with a real bag.'},createdAt:Date.now()},
-      {id:uid(),drawerId:'bags',name:'Sample 2',images:[],fields:{brand:'Other',purpose:['Office'],size:'',color:'Beige',owner:'Char',notes:''},createdAt:Date.now()},
+      s('Adidas Dropset',      {brand:'Adidas', model:'Dropset',        purpose:['Gym','Hybrid'],  size:'7.5 US W', color:'Purple',       owner:'User 1', notes:'Adizero Dropset Pro — Frozen Purple / Silver Metallic / Cloud White. Flat, stable sole — lifting days.'}, DROPSET_IMAGES),
+      s('Adidas Adizero Boston',{brand:'Adidas',model:'Adizero Boston', purpose:['Running'],       size:'7.5 US W', color:'Blue',         owner:'User 2',  notes:'Tempo and race-pace runs.'}),
+      s('Nike Quest 6',        {brand:'Nike',   model:'Quest 6',        purpose:['Running','Walking'],size:'7.5 US W',color:'Black',      owner:'User 1', notes:'Black / Iron Grey / White. Daily easy miles.'}, QUEST6_IMAGES),
+      s('Asics Gel-Nimbus',    {brand:'Asics',  model:'Gel-Nimbus',     purpose:['Running'],       size:'7.5 US W', color:'Green/Blue',   owner:'User 1', notes:'Max cushion, long runs.'}),
+      s('Asics Gel-Kayano',    {brand:'Asics',  model:'Gel-Kayano',     purpose:['Running'],       size:'7.5 US W', color:'Dirty white',  owner:'User 2',  notes:'Stability trainer.'}),
+      s('Onitsuka Tiger Mexico 66',{brand:'Onitsuka Tiger',model:'Mexico 66',purpose:['Walking','Office','Occasion'],size:'7.5 US W',color:'Classic blue',owner:'User 1',notes:'Classic blue with the red stripe.'}),
+      {id:uid(),drawerId:'bags',name:'Sample 1',images:[],fields:{brand:'Other',purpose:['Luggage'],size:'',color:'Black',owner:'User 1',notes:'Replace with a real bag.'},createdAt:Date.now()},
+      {id:uid(),drawerId:'bags',name:'Sample 2',images:[],fields:{brand:'Other',purpose:['Office'],size:'',color:'Beige',owner:'User 2',notes:''},createdAt:Date.now()},
       {id:uid(),drawerId:'bags',name:'Sample 3',images:[],fields:{brand:'Other',purpose:['Gym'],size:'',color:'Grey',owner:'Shared',notes:''},createdAt:Date.now()},
-      {id:uid(),drawerId:'tumblers',name:'Sample 1',images:[],fields:{brand:'Other',purpose:['Gym'],size:'750 ml',color:'Pink',owner:'Pearl',notes:''},createdAt:Date.now()},
-      {id:uid(),drawerId:'tumblers',name:'Sample 2',images:[],fields:{brand:'Other',purpose:['Office'],size:'500 ml',color:'White',owner:'Char',notes:''},createdAt:Date.now()},
+      {id:uid(),drawerId:'tumblers',name:'Sample 1',images:[],fields:{brand:'Other',purpose:['Gym'],size:'750 ml',color:'Pink',owner:'User 1',notes:''},createdAt:Date.now()},
+      {id:uid(),drawerId:'tumblers',name:'Sample 2',images:[],fields:{brand:'Other',purpose:['Office'],size:'500 ml',color:'White',owner:'User 2',notes:''},createdAt:Date.now()},
       {id:uid(),drawerId:'tumblers',name:'Sample 3',images:[],fields:{brand:'Other',purpose:['Travel'],size:'1 L',color:'Silver',owner:'Shared',notes:''},createdAt:Date.now()}
     ]
   };
 }
-/* Old saves only ever had a single `image` string — lift it into `images[]`. */
+/* ---------- B2. HOW LONG A PAIR LASTS ------------------------------------
+   Published replacement guidance, looked up once and baked in rather than
+   asked of the web on every render:
+     running shoes   300–500 miles; ~4–6 months at 20 miles a week (Fleet Feet,
+                     REI, Nike all land on the same 300–500 range)
+     racing/tempo    shorter — lighter foam, fewer materials
+     gym / training  every 6–12 months, 6–8 for high impact (Dr Steven
+                     Neufeld, foot and ankle surgeon, in Men's Journal)
+     walking         300–500 miles; 6–12 months at 5 brisk walks a week (Vionic)
+     everyday casual 300–500 miles or 8–12 months of daily wear; years if it's
+                     only worn occasionally (Atoms)
+   Steps use the standard ~2,000 steps per mile.                          */
+const STEPS_PER_MILE = 2000;
+const LIFESPAN_BY_KIND = {
+  running:  {label:'running shoe',      miles:[300,500], daily:[4,6],   weekly:[12,20],
+             note:'The midsole foam packs down with mileage long before the shoe looks worn out.'},
+  racing:   {label:'tempo / race shoe', miles:[250,400], daily:[3,5],   weekly:[10,16],
+             note:'Lighter racing foam gives out sooner than a daily trainer.'},
+  training: {label:'gym / training shoe', miles:null,    daily:[6,12],  weekly:[24,36],
+             note:'Judged on sole and midsole wear rather than mileage. Rotating two pairs makes each last longer.'},
+  walking:  {label:'walking shoe',      miles:[300,500], daily:[8,12],  weekly:[36,48],
+             note:'Roughly two miles of walking a day uses up the range in under a year.'},
+  casual:   {label:'everyday / lifestyle shoe', miles:[300,500], daily:[12,24], weekly:[48,60],
+             note:'Thin-soled lifestyle shoes usually go on looks before cushioning.'}
+};
+/* Known models get the right category outright; anything else is inferred
+   from what the item is actually used for. */
+const MODEL_KIND = {
+  'dropset':'training', 'adizero dropset':'training', 'adizero dropset pro':'training',
+  'adizero boston':'racing', 'adizero':'racing',
+  'quest 6':'running', 'gel-nimbus':'running', 'gel nimbus':'running',
+  'gel-kayano':'running', 'gel-kayano 31':'running', 'gel kayano 31':'running',
+  'pegasus':'running', 'ultraboost':'running',
+  'mexico 66':'casual'
+};
+const PURPOSE_KIND = {
+  running:'running', trail:'running', hybrid:'training', gym:'training',
+  badminton:'training', pickle:'training', pickleball:'training',
+  walking:'walking', trekking:'walking', travel:'walking',
+  office:'casual', occasion:'casual'
+};
+function kindFor(it){
+  const f = it.fields || {};
+  const model = String(f.model||'').toLowerCase().trim();
+  if(MODEL_KIND[model]) return MODEL_KIND[model];
+  for(const key in MODEL_KIND){ if(model && model.includes(key)) return MODEL_KIND[key]; }
+  for(const p of asArr(f.purpose)){
+    const k = PURPOSE_KIND[String(p).toLowerCase().trim()];
+    if(k) return k;
+  }
+  return 'casual';
+}
+/* Months since the "Bought" month, or null if it wasn't recorded. */
+function ageMonths(it){
+  const v = (it.fields||{}).purchased;
+  if(!v || !/^\d{4}-\d{2}$/.test(v)) return null;
+  const [y,m] = v.split('-').map(Number);
+  const now = new Date();
+  const months = (now.getFullYear()-y)*12 + (now.getMonth()+1-m);
+  return months < 0 ? null : months;
+}
+function monthName(v){
+  if(!v || !/^\d{4}-\d{2}$/.test(v)) return v || '';
+  const [y,m] = v.split('-').map(Number);
+  return ['January','February','March','April','May','June','July','August',
+          'September','October','November','December'][m-1] + ' ' + y;
+}
+function monthsLabel(n){
+  if(n===null || n===undefined) return '';
+  if(n < 1) return 'this month';
+  if(n < 12) return n + (n===1?' month':' months');
+  const y = Math.floor(n/12), m = n%12;
+  return y + (y===1?' year':' years') + (m ? ' ' + m + (m===1?' month':' months') : '');
+}
+function rangeLabel(r){
+  if(!r) return '';
+  const fmt = n => n % 12 === 0 ? (n/12) + (n===12?' year':' years') : n + ' months';
+  return r[0] === r[1] ? fmt(r[0]) : (r[1] % 12 === 0 && r[0] % 12 === 0
+    ? (r[0]/12) + '–' + (r[1]/12) + ' years'
+    : r[0] + '–' + r[1] + ' months');
+}
+function lifespanFor(it){
+  const kind = kindFor(it);
+  const spec = LIFESPAN_BY_KIND[kind];
+  const age = ageMonths(it);
+  const out = {kind, spec, age,
+    daily: rangeLabel(spec.daily), weekly: rangeLabel(spec.weekly), steps:null, miles:null};
+  if(spec.miles){
+    out.miles = spec.miles[0] + '–' + spec.miles[1] + ' miles';
+    const s = spec.miles.map(m => Math.round(m*STEPS_PER_MILE/1000));
+    out.steps = s[0] + 'k–' + (s[1] >= 1000 ? (s[1]/1000) + 'M' : s[1] + 'k') + ' steps';
+  }
+  if(age !== null){
+    out.verdict = age > spec.daily[1]
+      ? (age > spec.weekly[1] ? 'past-due' : 'daily-done')
+      : 'fine';
+  }
+  return out;
+}
+
+/* Old saves had a single `image` string and real first names — bring both
+   forward without losing anything. */
 function migrate(){
   (DB.items||[]).forEach(it=>{
     if(!Array.isArray(it.images)) it.images = it.image ? [it.image] : [];
+    const o = it.fields && it.fields.owner;
+    if(o && LEGACY_USERS[o]) it.fields.owner = LEGACY_USERS[o];
+  });
+  if(DB.users){
+    Object.keys(LEGACY_USERS).forEach(old=>{
+      if(DB.users[old]){
+        DB.users[LEGACY_USERS[old]] = DB.users[old];
+        delete DB.users[old];
+      }
+    });
+  }
+  (DB.drawers||[]).forEach(d=>{
+    (d.fields||[]).forEach(f=>{
+      if(f.key==='owner' && Array.isArray(f.options))
+        f.options = f.options.map(o => LEGACY_USERS[o] || o);
+      if(f.key==='purchased') f.type = 'month';
+    });
+    /* drawers saved before this version have no "Bought" field yet */
+    if((d.fields||[]).length && !d.fields.some(f=>f.key==='purchased')){
+      const i = d.fields.findIndex(f=>f.key==='notes');
+      const fld = {key:'purchased', label:'Bought', type:'month'};
+      if(i >= 0) d.fields.splice(i, 0, fld); else d.fields.push(fld);
+    }
   });
 }
 
@@ -785,7 +968,7 @@ function padPress(v){
   if(pinBuf.length===4) setTimeout(tryUnlock,120);
 }
 function tryUnlock(){
-  if(hash(pinBuf) === DB.users[pinFor].pin){ ME = pinFor; enterApp(); }
+  if(hash(pinBuf) === DB.users[pinFor].pin){ ME = pinFor; rememberUnlock(ME); enterApp(); }
   else{
     $('#lockErr').textContent = 'That code does not match. Try again.';
     $('#pinDots').classList.add('shake');
@@ -793,9 +976,22 @@ function tryUnlock(){
   }
 }
 function lockNow(){
-  ME=null; pinBuf=''; closeModal();
+  ME=null; pinBuf=''; closeModal(); forgetUnlock();
   $('#app').classList.add('hide'); $('#lock').classList.remove('hide');
   backToPick();
+}
+/* Staying unlocked across a refresh — but only for this run of the app.
+   Closing the tab (or the installed app) locks it again, so the code still
+   does its job on a shared phone. */
+const UNLOCK_KEY = 'cabinet.unlocked';
+function rememberUnlock(name){ try{ sessionStorage.setItem(UNLOCK_KEY, name); }catch(e){} }
+function forgetUnlock(){ try{ sessionStorage.removeItem(UNLOCK_KEY); }catch(e){} }
+function restoreUnlock(){
+  try{
+    const who = sessionStorage.getItem(UNLOCK_KEY);
+    if(who && DB.users && DB.users[who]){ ME = who; return true; }
+  }catch(e){}
+  return false;
 }
 function buildPad(){
   $('#pad').innerHTML = [1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="padPress('${n}')">${n}</button>`).join('')
@@ -902,12 +1098,13 @@ function visibleItems(){
 function thumbHTML(it){
   const hex = hexOf(it.fields.color);
   const ow = it.fields.owner;
-  const flag = ow ? `<span class="owner-flag" style="background:${OWNER_COLOR[ow]||'#5A6763'}">${esc(ow)}</span>` : '';
+  const flag = ow ? `<span class="owner-dot" style="background:${OWNER_COLOR[ow]||'#5A6763'}" title="${esc(ow)}" aria-label="${esc(ow)}"></span>` : '';
   const cover = it.images && it.images[0];
   const inner = cover
     ? `<img src="${esc(cover)}" alt="${esc(it.name)}" loading="lazy" onerror="this.remove()">`
     : `<div class="ph" style="background:linear-gradient(145deg,${hex},${hex}CC)">${esc(initials(it.fields.brand||it.name))}</div>`;
   return `<div class="thumb">${inner}${flag}</div>`;
+  /* `flag` is a plain coloured dot — whose it is, without a name on the photo */
 }
 function renderGrid(){
   const d = drawer(ACTIVE), list = visibleItems();
@@ -923,15 +1120,20 @@ function renderGrid(){
   }
   $('#grid').innerHTML = list.map(it=>{
     const tags = asArr(it.fields.purpose).slice(0,3).map(p=>`<span class="tag">${esc(p)}</span>`).join('');
-    const meta = [it.fields.brand, it.fields.size].filter(Boolean).join(' · ');
+    /* size and colour share one line; the brand already sits above the model */
+    const colour = it.fields.color
+      ? `<i class="dot" style="background:${hexOf(it.fields.color)}"></i>${esc(it.fields.color)}`
+      : '';
+    const meta = [esc(it.fields.size||''), colour].filter(Boolean).join(' · ');
+    const age = ageMonths(it);
     return `<button class="item" onclick="openDetail('${it.id}')">
       ${thumbHTML(it)}
       <div class="body">
         <div class="nm">${nameBlock(it)}</div>
-        <div class="meta">${esc(meta)}</div>
+        <div class="meta">${meta}</div>
         <div class="tags">
-          ${it.fields.color?`<span class="tag"><i class="dot" style="background:${hexOf(it.fields.color)}"></i>${esc(it.fields.color)}</span>`:''}
           ${tags}
+          ${age !== null ? `<span class="tag tag-age">${esc(monthsLabel(age))}</span>` : ''}
         </div>
       </div>
     </button>`;
@@ -941,24 +1143,135 @@ function renderGrid(){
 /* ---------- G. ITEM FORM (add / edit) ------------------------------------- */
 let formPhotos = [];
 
+/* Each list-backed field carries its own "Edit list" panel, so the choices are
+   managed right where they're used instead of over in Settings. */
+function listHeader(f){
+  const editable = f.type==='select' || f.type==='tags' || f.type==='color';
+  return `<div class="lblrow">
+      <span class="lbl" style="margin-bottom:0">${esc(f.label)}</span>
+      ${editable ? `<button type="button" class="linklike" onclick="toggleListEditor('${esc(f.key)}')">Edit list</button>` : ''}
+    </div>
+    ${editable ? `<div class="listeditor hide" id="le_${esc(f.key)}">
+      <p class="hint" style="margin:0 0 .4rem">One choice per line${f.type==='color'?', written as <code>Name = #hex</code>':''}. Removing a line here won't change items already using it.</p>
+      <textarea class="input" id="lev_${esc(f.key)}" style="min-height:112px;font-size:.86rem"></textarea>
+      <div style="display:flex;gap:.45rem;margin-top:.45rem">
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveFieldList('${esc(f.key)}')">Save list</button>
+        <button type="button" class="btn btn-sm" onclick="toggleListEditor('${esc(f.key)}')">Cancel</button>
+      </div>
+    </div>` : ''}`;
+}
+
 function fieldHTML(f, val){
   const id = 'f_'+f.key;
   if(f.type==='textarea') return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label><textarea class="input" id="${id}">${esc(val||'')}</textarea></div>`;
+  if(f.type==='month'){
+    return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label>
+      <input class="input" type="month" id="${id}" value="${esc(val||'')}" max="${new Date().toISOString().slice(0,7)}" onchange="refreshAgeNote()">
+      <p class="hint" id="ageNote" style="margin:.35rem 0 0"></p></div>`;
+  }
   if(f.type==='select'){
     const opts = Array.from(new Set([...(f.options||[]), val].filter(Boolean)));
-    return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label>
-      <select class="input" id="${id}"><option value="">—</option>${opts.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+    return `<div class="field">${listHeader(f)}
+      <select class="input" id="${id}" onchange="maybeAddOption('${esc(f.key)}')">
+        <option value="">—</option>
+        ${opts.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}
+        <option value="__new__">+ Add new…</option>
+      </select></div>`;
   }
   if(f.type==='color'){
-    return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label>
-      <select class="input" id="${id}"><option value="">—</option>${DB.colors.map(c=>`<option ${c.name===val?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>`;
+    return `<div class="field">${listHeader(f)}
+      <select class="input" id="${id}" onchange="maybeAddOption('${esc(f.key)}')">
+        <option value="">—</option>
+        ${DB.colors.map(c=>`<option ${c.name===val?'selected':''}>${esc(c.name)}</option>`).join('')}
+        <option value="__new__">+ Add new…</option>
+      </select></div>`;
   }
   if(f.type==='tags'){
     const sel = asArr(val);
-    return `<div class="field"><span class="lbl">${esc(f.label)}</span>
-      <div class="chipset" id="${id}">${(f.options||[]).map(o=>`<button type="button" class="chip" aria-pressed="${sel.includes(o)}" onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true'?'false':'true')">${esc(o)}</button>`).join('')}</div></div>`;
+    return `<div class="field">${listHeader(f)}
+      <div class="chipset" id="${id}">
+        ${(f.options||[]).map(o=>`<button type="button" class="chip" aria-pressed="${sel.includes(o)}" onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true'?'false':'true')">${esc(o)}</button>`).join('')}
+        <button type="button" class="chip chip-add" onclick="addTagOption('${esc(f.key)}')">+ Add</button>
+      </div></div>`;
   }
   return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label><input class="input" id="${id}" value="${esc(val||'')}"></div>`;
+}
+
+/* ---- managing the choice lists from inside the form ---- */
+function fieldDef(key){ return drawer(ACTIVE).fields.find(f=>f.key===key); }
+
+function toggleListEditor(key){
+  const box = $('#le_'+key); if(!box) return;
+  const f = fieldDef(key);
+  if(box.classList.contains('hide')){
+    $('#lev_'+key).value = f.type==='color'
+      ? DB.colors.map(c=>c.name+' = '+c.hex).join('\n')
+      : (f.options||[]).join('\n');
+    box.classList.remove('hide');
+  } else box.classList.add('hide');
+}
+function saveFieldList(key){
+  const f = fieldDef(key), raw = $('#lev_'+key).value;
+  const keep = $('#f_'+key) ? $('#f_'+key).value : '';
+  if(f.type==='color'){
+    const cols = raw.split('\n').map(l=>{
+      const [n,h] = l.split('=').map(s=>(s||'').trim());
+      return n ? {name:n, hex:/^#[0-9a-f]{3,8}$/i.test(h||'') ? h : '#B9C0BA'} : null;
+    }).filter(Boolean);
+    if(cols.length) DB.colors = cols;
+  } else {
+    f.options = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  }
+  save();
+  refreshField(key, keep);
+  renderRail(); renderGrid();
+  toast('List saved.');
+}
+/* Re-render just one field in the open form, keeping what was selected. */
+function refreshField(key, keep){
+  const f = fieldDef(key); if(!f) return;
+  const wrap = $('#f_'+key)?.closest('.field') || $('#le_'+key)?.closest('.field');
+  if(!wrap) return;
+  const selected = f.type==='tags'
+    ? $$('#f_'+key+' .chip[aria-pressed="true"]').map(b=>b.textContent.trim())
+    : keep;
+  wrap.outerHTML = fieldHTML(f, selected);
+}
+function maybeAddOption(key){
+  const el = $('#f_'+key);
+  if(!el) return;
+  if(el.value !== '__new__'){ refreshLifespanNote(); return; }   // ordinary pick
+  const f = fieldDef(key);
+  const label = f.type==='color' ? 'New colour name' : 'New ' + f.label.toLowerCase();
+  const v = prompt(label);
+  if(!v || !v.trim()){ el.value = ''; return; }
+  const name = v.trim();
+  if(f.type==='color'){
+    if(!DB.colors.some(c=>c.name.toLowerCase()===name.toLowerCase())){
+      const hex = prompt('Colour code for "'+name+'" (e.g. #8A5A2B)', '#B9C0BA');
+      DB.colors.push({name, hex:/^#[0-9a-f]{3,8}$/i.test((hex||'').trim()) ? hex.trim() : '#B9C0BA'});
+    }
+  } else if(!(f.options||[]).some(o=>o.toLowerCase()===name.toLowerCase())){
+    f.options = [...(f.options||[]), name];
+  }
+  save();
+  refreshField(key, name);
+  renderRail();
+  if(key==='model' || key==='brand') refreshLifespanNote();
+}
+function addTagOption(key){
+  const f = fieldDef(key);
+  const v = prompt('New ' + f.label.toLowerCase());
+  if(!v || !v.trim()) return;
+  const name = v.trim();
+  if(!(f.options||[]).some(o=>o.toLowerCase()===name.toLowerCase())) f.options = [...(f.options||[]), name];
+  save();
+  const chosen = $$('#f_'+key+' .chip[aria-pressed="true"]').map(b=>b.textContent.trim());
+  chosen.push(name);
+  const wrap = $('#f_'+key).closest('.field');
+  wrap.outerHTML = fieldHTML(f, chosen);
+  renderRail();
+  refreshLifespanNote();
 }
 
 function openForm(id){
@@ -985,9 +1298,8 @@ function openForm(id){
           <p class="hint" id="photoHint" style="margin:0">You can add more than one photo per item.</p>
         </div>
       </div>
-      <div class="field"><label class="lbl" for="f_name">Name</label>
-        <input class="input" id="f_name" value="${esc(it?it.name:'')}" placeholder="e.g. Adidas Dropset"></div>
       ${d.fields.map(f=>fieldHTML(f, it ? it.fields[f.key] : (f.key==='owner'?defOwner:''))).join('')}
+      <div id="lifespanNote"></div>
     </div>
     <footer>
       ${it?`<button class="btn btn-danger btn-sm" onclick="removeItem('${it.id}')">Delete</button>`:''}
@@ -997,6 +1309,48 @@ function openForm(id){
     </footer>
   </div>`);
   drawPrev();
+  refreshAgeNote();
+  refreshLifespanNote();
+  ['brand','model','purpose'].forEach(k=>{
+    const el = $('#f_'+k);
+    if(el) el.addEventListener('change', refreshLifespanNote);
+    if(k==='purpose') $('#f_purpose')?.addEventListener('click', ()=>setTimeout(refreshLifespanNote,0));
+  });
+}
+/* Age ticks over from the Bought month as soon as it's picked. */
+function refreshAgeNote(){
+  const note = $('#ageNote'); if(!note) return;
+  const v = $('#f_purchased')?.value;
+  const months = v && /^\d{4}-\d{2}$/.test(v) ? ageMonths({fields:{purchased:v}}) : null;
+  note.textContent = months === null ? '' : 'That makes it ' + monthsLabel(months) + ' old.';
+  refreshLifespanNote();
+}
+/* Typical lifespan for whatever brand/model/purpose is currently selected. */
+function refreshLifespanNote(){
+  const box = $('#lifespanNote'); if(!box) return;
+  const probe = {fields:{
+    brand: $('#f_brand')?.value || '',
+    model: $('#f_model')?.value || '',
+    purpose: $$('#f_purpose .chip[aria-pressed="true"]').map(b=>b.textContent.trim()),
+    purchased: $('#f_purchased')?.value || ''
+  }};
+  if(!probe.fields.model && !probe.fields.purpose.length){ box.innerHTML = ''; return; }
+  const L = lifespanFor(probe);
+  box.innerHTML = `<div class="lifebox">
+    <div class="lifebox-h">Typical life of a ${esc(L.spec.label)}</div>
+    <dl class="lifegrid">
+      <dt>Almost daily</dt><dd>${esc(L.daily)}</dd>
+      <dt>1–2× a week</dt><dd>${esc(L.weekly)}</dd>
+      ${L.miles?`<dt>Distance</dt><dd>${esc(L.miles)} · about ${esc(L.steps)}</dd>`:''}
+    </dl>
+    <p class="hint" style="margin:.5rem 0 0">${esc(L.spec.note)}</p>
+    ${probe.fields.model ? `<button type="button" class="linklike" style="margin-top:.5rem" onclick="lookupLifespan()">Check the web for this exact model</button>` : ''}
+  </div>`;
+}
+function lookupLifespan(){
+  const brand = $('#f_brand')?.value || '', model = $('#f_model')?.value || '';
+  const q = (brand + ' ' + model + ' how many miles do they last replace').trim();
+  window.open('https://www.google.com/search?q='+encodeURIComponent(q), '_blank', 'noopener');
 }
 function drawPrev(){
   const p = $('#prev'); if(!p) return;
@@ -1044,7 +1398,7 @@ function handleFiles(e){
   });
 }
 function findPhoto(){
-  const bits = [$('#f_name')?.value, $('#f_brand')?.value, $('#f_model')?.value, $('#f_color')?.value].filter(Boolean);
+  const bits = [$('#f_brand')?.value, $('#f_model')?.value, $('#f_color')?.value].filter(Boolean);
   const q = bits.join(' ') || drawer(ACTIVE).name;
   window.open('https://www.google.com/search?tbm=isch&q='+encodeURIComponent(q), '_blank', 'noopener');
   toast('Save the image, then use Choose photos.');
@@ -1059,9 +1413,11 @@ function readForm(d){
 }
 function saveItem(id){
   const d = drawer(ACTIVE);
-  const name = $('#f_name').value.trim();
-  if(!name){ toast('Give it a name first.'); $('#f_name').focus(); return; }
   const fields = readForm(d);
+  /* The name is no longer typed — it's simply the brand and model. */
+  const name = [fields.brand, fields.model].filter(Boolean).join(' ').trim()
+            || fields.size || d.noun || 'Item';
+  if(!fields.brand && !fields.model){ toast('Pick a brand or a model first.'); return; }
   if(id){
     const it = DB.items.find(x=>x.id===id);
     Object.assign(it, {name, fields, images:formPhotos.slice()});
@@ -1072,12 +1428,40 @@ function saveItem(id){
   toast(id ? 'Saved.' : `Added to ${d.name}.`);
 }
 function removeItem(id){
-  const it = DB.items.find(x=>x.id===id);
-  if(!confirm(`Delete "${it.name}"? This cannot be undone.`)) return;
-  DB.items = DB.items.filter(x=>x.id!==id);
-  save(); closeModal(); renderTabs(); renderRail(); renderGrid();
-  toast('Deleted.');
+  const it = DB.items.find(x=>x.id===id); if(!it) return;
+  const label = [it.fields.brand, it.fields.model].filter(Boolean).join(' ') || it.name;
+  askConfirm({
+    title: 'Remove this one?',
+    body: `<strong>${esc(label)}</strong> will be deleted from ${esc(drawer(it.drawerId).name)}, along with its photos. This cannot be undone, and it disappears for both of you.`,
+    confirmLabel: 'Yes, delete it',
+    danger: true,
+    onYes(){
+      DB.items = DB.items.filter(x=>x.id!==id);
+      save(); closeModal(); renderTabs(); renderRail(); renderGrid();
+      toast('Deleted.');
+    }
+  });
 }
+/* A confirmation that looks like the rest of the app, and works inside the
+   installed app where the browser's own dialogs are easy to miss. */
+let confirmAction = null;
+function askConfirm({title, body, confirmLabel, danger, onYes}){
+  confirmAction = onYes;
+  const prev = $('#modals').innerHTML;
+  $('#modals').insertAdjacentHTML('beforeend', `<div class="scrim" id="confirmScrim" style="z-index:70">
+    <div class="sheet" role="alertdialog" aria-modal="true" style="max-width:420px">
+      <header><h2>${esc(title)}</h2></header>
+      <div class="content"><p style="margin:0">${body}</p></div>
+      <footer>
+        <span class="grow"></span>
+        <button class="btn" onclick="closeConfirm()">Cancel</button>
+        <button class="btn ${danger?'btn-danger':'btn-primary'}" onclick="runConfirm()">${esc(confirmLabel||'Confirm')}</button>
+      </footer>
+    </div>
+  </div>`);
+}
+function closeConfirm(){ $('#confirmScrim')?.remove(); confirmAction = null; }
+function runConfirm(){ const fn = confirmAction; closeConfirm(); if(fn) fn(); }
 
 /* ---------- H. ITEM DETAIL ------------------------------------------------ */
 let DETAIL_IMAGES = [];
@@ -1097,15 +1481,34 @@ function openDetail(id){
     let disp = Array.isArray(v) ? v.map(x=>`<span class="tag">${esc(x)}</span>`).join(' ')
       : f.type==='color' ? `<span class="tag"><i class="dot" style="background:${hexOf(v)}"></i>${esc(v)}</span>`
       : f.key==='owner' ? `<span class="tag tag-owner" style="background:${OWNER_COLOR[v]||'#5A6763'}">${esc(v)}</span>`
+      : f.type==='month' ? esc(monthName(v)) + ' <span class="hint" style="display:inline">· ' + esc(monthsLabel(ageMonths(it))) + ' old</span>'
       : esc(v);
     return `<dt>${esc(f.label)}</dt><dd>${disp}</dd>`;
   }).join('');
+  const L = lifespanFor(it);
+  const verdict = L.verdict === 'past-due'
+      ? `<p class="lifeflag lifeflag-warn">Older than the usual life of a ${esc(L.spec.label)} even at one or two wears a week — worth checking the midsole and tread.</p>`
+    : L.verdict === 'daily-done'
+      ? `<p class="lifeflag">Past the usual life if it's been worn almost daily, still within range at one or two wears a week.</p>`
+    : '';
+  const lifeHTML = `<div class="lifebox" style="margin-top:1rem">
+      <div class="lifebox-h">Typical life of a ${esc(L.spec.label)}</div>
+      <dl class="lifegrid">
+        <dt>Almost daily</dt><dd>${esc(L.daily)}</dd>
+        <dt>1–2× a week</dt><dd>${esc(L.weekly)}</dd>
+        ${L.miles?`<dt>Distance</dt><dd>${esc(L.miles)} · about ${esc(L.steps)}</dd>`:''}
+        ${L.age!==null?`<dt>This pair</dt><dd>${esc(monthsLabel(L.age))} old</dd>`:''}
+      </dl>
+      ${verdict}
+      <p class="hint" style="margin:.5rem 0 0">${esc(L.spec.note)}</p>
+    </div>`;
   showModal(`<div class="sheet" role="dialog" aria-modal="true">
     <header><h2>${nameBlock(it)}</h2><button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
     <div class="content">
       <div class="detail-hero">${hero}</div>
       ${thumbs}
       <dl class="spec">${rows}</dl>
+      ${lifeHTML}
     </div>
     <footer>
       <button class="btn btn-danger btn-sm" onclick="removeItem('${it.id}')">Delete</button>
@@ -1117,6 +1520,100 @@ function openDetail(id){
 function switchDetailPhoto(i){
   const img = $('#heroImg'); if(img && DETAIL_IMAGES[i]) img.src = DETAIL_IMAGES[i];
   $$('.dthumb').forEach((b,idx)=>b.classList.toggle('active', idx===i));
+}
+
+/* ---------- H2. CHAT ------------------------------------------------------
+   A single shared document holding the last 300 messages, so both of you can
+   talk about what's in here without leaving the app. Offline, it simply says
+   so rather than pretending a message was sent.                           */
+let CHAT = [], chatOpen = false;
+const CHAT_SEEN_KEY = 'cabinet.chatSeen';
+const CHAT_LIMIT = 300;
+
+function chatSeenAt(){ try{ return Number(localStorage.getItem(CHAT_SEEN_KEY)||0); }catch(e){ return 0; } }
+function markChatSeen(){
+  const last = CHAT.length ? CHAT[CHAT.length-1].at : Date.now();
+  try{ localStorage.setItem(CHAT_SEEN_KEY, String(last)); }catch(e){}
+  paintChatBadge();
+}
+function unreadCount(){
+  const seen = chatSeenAt();
+  return CHAT.filter(m => m.at > seen && m.from !== ME).length;
+}
+function paintChatBadge(){
+  const dot = $('#chatDot'); if(!dot) return;
+  const n = unreadCount();
+  dot.classList.toggle('hide', n === 0);
+  dot.textContent = n > 9 ? '9+' : String(n);
+}
+function startChat(){
+  Cloud.watchChat(msgs => {
+    CHAT = Array.isArray(msgs) ? msgs : [];
+    paintChatBadge();
+    if(chatOpen) paintChat();
+  });
+}
+function openChat(){
+  chatOpen = true;
+  showModal(`<div class="sheet" role="dialog" aria-modal="true" style="max-width:520px">
+    <header><h2>Chat</h2><button class="btn btn-quiet btn-sm" onclick="closeChat()">Close</button></header>
+    <div class="content" id="chatBody" style="min-height:240px"></div>
+    <footer>
+      <input class="input" id="chatInput" placeholder="Message ${esc(OWNERS.filter(o=>o!==ME && DB.users[o])[0] || 'the other of you')}…" autocomplete="off" style="flex:1"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();sendChat();}">
+      <button class="btn btn-primary" onclick="sendChat()">Send</button>
+    </footer>
+  </div>`);
+  paintChat();
+  markChatSeen();
+  setTimeout(()=>$('#chatInput')?.focus(), 60);
+}
+function closeChat(){ chatOpen = false; markChatSeen(); closeModal(); }
+function paintChat(){
+  const body = $('#chatBody'); if(!body) return;
+  if(!Cloud.hasClient()){
+    body.innerHTML = `<p class="hint">Chat needs the shared database, and this device isn't connected to it right now.</p>`;
+    return;
+  }
+  if(!CHAT.length){
+    body.innerHTML = `<p class="hint">Nothing here yet. Say something — it shows up on the other phone straight away.</p>`;
+    return;
+  }
+  const seen = chatSeenAt();
+  body.innerHTML = CHAT.map(m=>{
+    const mine = m.from === ME;
+    const fresh = !mine && m.at > seen;
+    return `<div class="msg ${mine?'msg-mine':''}">
+      <div class="msg-b${fresh?' msg-new':''}">
+        ${mine?'':`<span class="msg-who" style="color:${OWNER_COLOR[m.from]||'#5A6763'}">${esc(m.from)}</span>`}
+        <span class="msg-t">${esc(m.text)}</span>
+        <span class="msg-at">${esc(chatTime(m.at))}</span>
+      </div>
+    </div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+function chatTime(ts){
+  const d = new Date(ts), now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const t = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  return sameDay ? t : d.toLocaleDateString([], {day:'numeric', month:'short'}) + ' ' + t;
+}
+async function sendChat(){
+  const el = $('#chatInput'); if(!el) return;
+  const text = el.value.trim(); if(!text) return;
+  if(!Cloud.hasClient()){ toast('No connection to the shared cabinet — message not sent.'); return; }
+  const msg = {id:uid(), from:ME||'Someone', text:text.slice(0,2000), at:Date.now()};
+  const next = [...CHAT, msg].slice(-CHAT_LIMIT);
+  el.value = '';
+  CHAT = next; paintChat();
+  try{
+    await Cloud.pushChat(next);
+    markChatSeen();
+  }catch(e){
+    console.warn(e);
+    toast('Could not send that — check the connection.');
+  }
 }
 
 /* ---------- I. SETTINGS --------------------------------------------------- */
@@ -1302,6 +1799,7 @@ function resetAll(){
   migrate();
   ACTIVE = DB.drawers[0].id;
   buildPad(); renderPlates();
+  if(restoreUnlock()) enterApp();   // a refresh shouldn't ask for the code again
 
   // Optional shared backend: if Settings > Sync has been configured, connect,
   // pull the latest shared copy, and keep listening for the other person's edits.
@@ -1324,6 +1822,7 @@ function resetAll(){
     if(!DB.drawers.find(d=>d.id===ACTIVE)) ACTIVE = DB.drawers[0].id;
     if(ME){ renderTabs(); renderRail(); renderGrid(); }
     renderPlates();
+    startChat();
   });
 
   registerServiceWorker();
