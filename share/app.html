@@ -1012,26 +1012,25 @@ function nameBlock(it){
   return `<span class="modelline">${esc(it.name)}</span>`;
 }
 
-/* Every sheet pushes a history entry, so the phone's back button (or gesture)
-   closes what's open instead of leaving the app. */
-let modalDepth = 0;
-function closeModal(fromBack){
+/* Sheets are plain overlays, deliberately NOT tied to browser history.
+   Hooking them to the back button broke going from an item straight to its
+   edit form: closing pushed a history.back() that landed a beat later and
+   swallowed the form that had just opened. Not worth the trade. */
+function closeModal(){
   if(!$('#modals').innerHTML) return;
   $('#modals').innerHTML=''; document.body.style.overflow='';
   chatOpen = false;
-  if(!fromBack && modalDepth > 0){ modalDepth--; history.back(); }
 }
 function showModal(html){
-  const wasOpen = !!$('#modals').innerHTML;
   $('#modals').innerHTML = `<div class="scrim" onclick="if(event.target===this)closeModal()">${html}</div>`;
   document.body.style.overflow='hidden';
-  if(!wasOpen){ modalDepth++; history.pushState({cabinetModal:modalDepth}, ''); }
 }
-window.addEventListener('popstate', () => {
-  if($('#confirmScrim')){ closeConfirm(); return; }
-  if($('#modals').innerHTML){ modalDepth = Math.max(0, modalDepth-1); closeModal(true); return; }
-  if($('#sidebar')?.classList.contains('open')){ closeSidebar(); return; }
-  /* nothing open — let the browser do whatever it would normally do */
+/* Escape still closes the top-most thing, on a keyboard at least. */
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Escape') return;
+  if($('#confirmScrim')) closeConfirm();
+  else if($('#modals').innerHTML) closeModal();
+  else if($('#sidebar')?.classList.contains('open')) closeSidebar();
 });
 
 /* ---------- D. LOCK SCREEN ----------------------------------------------- */
@@ -1770,10 +1769,170 @@ async function sendChat(){
 }
 
 /* ---------- H3. OUTFIT ADVISOR -------------------------------------------
-   Describe (or photograph) what you're wearing and get back things from this
-   cabinet that would go with it. The thinking happens in a small worker you
-   host yourself — the API key lives there, never in this file, because
-   anything in here is readable by anyone who opens the page.             */
+   Describe or photograph what you're wearing and get back things from this
+   cabinet that would go with it.
+
+   This runs entirely on the device — no API key, no account, no bill, and
+   nothing leaves the phone. Colours come out of the photo with a canvas, and
+   the matching is ordinary colour theory plus how dressed-up the occasion is.
+   If an assistant address is ever set in Settings, that's used instead; with
+   none set, everything below still works.                                */
+
+/* Each basic colour placed on the wheel, and whether it behaves as a neutral. */
+const COLOR_TRAITS = {
+  black:{family:'neutral',neutral:true},   white:{family:'neutral',neutral:true},
+  grey:{family:'neutral',neutral:true},    silver:{family:'neutral',neutral:true},
+  beige:{family:'neutral',neutral:true},   cream:{family:'neutral',neutral:true},
+  brown:{family:'orange', neutral:true},   navy:{family:'blue',   neutral:true},
+  gold:{family:'yellow',  neutral:false},  red:{family:'red',     neutral:false},
+  pink:{family:'red',     neutral:false},  orange:{family:'orange',neutral:false},
+  yellow:{family:'yellow',neutral:false},  green:{family:'green', neutral:false},
+  olive:{family:'green',  neutral:true},   teal:{family:'teal',   neutral:false},
+  blue:{family:'blue',    neutral:false},  purple:{family:'purple',neutral:false},
+  multi:{family:'multi',  neutral:false}
+};
+const COMPLEMENTS = {blue:'orange', orange:'blue', red:'green', green:'red',
+                     yellow:'purple', purple:'yellow', teal:'red'};
+const ANALOGOUS = {blue:['teal','purple'], teal:['blue','green'], green:['teal','yellow','olive'],
+                   yellow:['green','orange'], orange:['yellow','red'], red:['orange','purple'],
+                   purple:['red','blue']};
+const traitsOf = name => COLOR_TRAITS[String(name||'').toLowerCase()] || null;
+
+/* How dressed-up something is: 0 sporty, 1 casual, 2 smart. */
+const PURPOSE_FORMALITY = {running:0,gym:0,trail:0,hybrid:0,badminton:0,pickle:0,pickleball:0,
+  walking:1,travel:1,everyday:1,trekking:1,luggage:1,
+  office:2,occasion:2};
+const OCCASION_WORDS = [
+  [2, /\b(wedding|dinner|formal|smart|office|work|meeting|interview|church|date|party|event|suit|blazer|dress|heels|slacks|chinos|trousers|skirt)\b/i],
+  [0, /\b(gym|run(ning)?|workout|training|lift(ing)?|jog|sport|athletic|leggings|shorts|tracksuit)\b/i],
+  [1, /\b(casual|weekend|jeans|denim|t-?shirt|tee|hoodie|errands|mall|coffee|travel(ling)?|walk)\b/i]
+];
+function formalityOf(text){
+  for(const [level, re] of OCCASION_WORDS) if(re.test(text)) return level;
+  return 1;                                   // assume everyday if unsaid
+}
+function itemFormality(it){
+  const levels = asArr(it.fields.purpose)
+    .map(p => PURPOSE_FORMALITY[String(p).toLowerCase().trim()])
+    .filter(v => v !== undefined);
+  if(!levels.length) return 1;
+  return levels.reduce((a,b)=>a+b,0) / levels.length;
+}
+/* Colour words mentioned in a typed description. */
+function coloursInText(text){
+  const found = [];
+  Object.keys(COLOR_TRAITS).forEach(name=>{
+    if(new RegExp('\\b'+name+'\\b','i').test(text)) found.push(name);
+  });
+  ['ivory','off-white','tan','khaki','maroon','burgundy','charcoal','denim','sand']
+    .forEach(w=>{
+      if(!new RegExp('\\b'+w+'\\b','i').test(text)) return;
+      const map = {ivory:'cream','off-white':'cream',tan:'beige',khaki:'beige',
+                   maroon:'red',burgundy:'red',charcoal:'grey',denim:'blue',sand:'beige'};
+      if(!found.includes(map[w])) found.push(map[w]);
+    });
+  return found;
+}
+/* Pull the main colours straight out of a photo, on the device. */
+function coloursInPhoto(dataUrl){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = () => {
+      const S = 60;
+      const c = document.createElement('canvas');
+      c.width = S; c.height = S;
+      const ctx = c.getContext('2d', {willReadFrequently:true});
+      ctx.drawImage(img, 0, 0, S, S);
+      let px;
+      try{ px = ctx.getImageData(0,0,S,S).data; }catch(e){ return resolve([]); }
+      const tally = {};
+      for(let i=0;i<px.length;i+=4){
+        if(px[i+3] < 128) continue;
+        const name = nearestBasicColour(px[i], px[i+1], px[i+2]);
+        tally[name] = (tally[name]||0) + 1;
+      }
+      const total = Object.values(tally).reduce((a,b)=>a+b,0) || 1;
+      resolve(Object.entries(tally)
+        .sort((a,b)=>b[1]-a[1])
+        .filter(([,n]) => n/total > 0.08)      // ignore incidental specks
+        .slice(0,3)
+        .map(([name])=>name));
+    };
+    img.onerror = () => resolve([]);
+    img.src = dataUrl;
+  });
+}
+function nearestBasicColour(r,g,b){
+  let best = 'grey', bestD = Infinity;
+  for(const c of COLORS){
+    const h = c.hex.replace('#','');
+    const cr = parseInt(h.slice(0,2),16), cg = parseInt(h.slice(2,4),16), cb = parseInt(h.slice(4,6),16);
+    /* weighted so it matches how the eye judges closeness */
+    const d = 2*(r-cr)**2 + 4*(g-cg)**2 + 3*(b-cb)**2;
+    if(d < bestD){ bestD = d; best = c.name.toLowerCase(); }
+  }
+  return best;
+}
+
+/* Score one thing in the cabinet against the outfit. */
+function scoreItem(it, outfitColours, level){
+  const name = String(it.fields.color||'').toLowerCase();
+  const t = traitsOf(name);
+  const reasons = [];
+  let score = 0;
+
+  const outTraits = outfitColours.map(traitsOf).filter(Boolean);
+  const outAllNeutral = outTraits.length > 0 && outTraits.every(o=>o.neutral);
+
+  if(!t){
+    score += 0.5;
+  } else if(t.family === 'multi'){
+    score += 1.5; reasons.push('the mix of colours picks up most things');
+  } else if(t.neutral){
+    score += 3; reasons.push(`${it.fields.color} is a neutral, so it sits under anything`);
+  } else if(outAllNeutral){
+    score += 3; reasons.push(`brings some ${name} to an otherwise neutral outfit`);
+  } else {
+    for(const o of outTraits){
+      if(o.neutral) { score += 1.5; continue; }
+      if(o.family === t.family){ score += 2; reasons.push(`the ${name} echoes what you're wearing`); }
+      else if(COMPLEMENTS[o.family] === t.family){ score += 2.5; reasons.push(`${name} sits opposite the ${o.family}, which makes both stand out`); }
+      else if((ANALOGOUS[o.family]||[]).includes(t.family)){ score += 2; reasons.push(`${name} sits next to the ${o.family} on the wheel — an easy match`); }
+      else { score -= 1; reasons.push(`${name} fights the ${o.family} a little`); }
+    }
+  }
+
+  const gap = Math.abs(itemFormality(it) - level);
+  const word = ['sporty','everyday','smart'][level];
+  let veto = false;
+  if(gap <= 0.5){ score += 3; reasons.push(`dressed about right for something ${word}`); }
+  else if(gap <= 1.2){ score += 1; }
+  else { veto = true; }   // wrong register for the occasion — don't offer it at all
+
+  if((it.images||[]).length) score += 0.2;    // nudge things you've photographed
+  return {score, veto, why: reasons.slice(0,2).join(', ')};
+}
+function suggestLocally(outfitColours, text){
+  const level = formalityOf(text);
+  const byDrawer = {};
+  DB.items.forEach(it=>{
+    const s = scoreItem(it, outfitColours, level);
+    (byDrawer[it.drawerId] = byDrawer[it.drawerId] || []).push({it, ...s});
+  });
+  const picks = [];
+  Object.keys(byDrawer).forEach(id=>{
+    const ranked = byDrawer[id].filter(r=>!r.veto && r.score > 1.5).sort((a,b)=>b.score-a.score);
+    ranked.slice(0, id === 'shoes' ? 2 : 1).forEach(r=>picks.push(r));
+  });
+  picks.sort((a,b)=>b.score-a.score);
+  const vetoed = Object.values(byDrawer).flat().some(r=>r.veto);
+  return {
+    picks: picks.slice(0,4).map(p=>({id:p.it.id, why: p.why ? p.why.charAt(0).toUpperCase()+p.why.slice(1)+'.' : ''})),
+    note: picks.length
+      ? (vetoed ? 'Anything too sporty or too dressy for the occasion was left out.' : '')
+      : 'Nothing in the cabinet really suits that — a neutral would be the safe call if you have one.'
+  };
+}
 const ADVISOR_KEY = 'cabinet.advisor.v1';
 function advisorEndpoint(){
   try{ return (JSON.parse(localStorage.getItem(ADVISOR_KEY)||'{}').endpoint || '').trim(); }catch(e){ return ''; }
@@ -1786,7 +1945,7 @@ function openOutfit(){
     <header><h2>What goes with this?</h2>
       <button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
     <div class="content">
-      ${advisorEndpoint() ? '' : `<p class="lifeflag" style="margin-top:0">This needs a one-off setup: a small service of your own that holds the API key. Settings → Assistant has the address field, and the repo has the worker code and steps.</p>`}
+      <p class="hint" style="margin-top:0">Worked out on this phone — nothing is uploaded, and it costs nothing.</p>
       <div class="field">
         <label class="lbl" for="of_text">What are you wearing?</label>
         <textarea class="input" id="of_text" placeholder="e.g. cream linen trousers and a navy shirt, dinner out"></textarea>
@@ -1801,6 +1960,7 @@ function openOutfit(){
           <button type="button" class="btn btn-sm" onclick="document.getElementById('ofLib').click()">Choose a photo</button>
         </div>
       </div>
+      <div id="ofColours" style="margin:.4rem 0 .8rem"></div>
       <div id="ofResult"></div>
     </div>
     <footer>
@@ -1808,7 +1968,7 @@ function openOutfit(){
       <button class="btn btn-primary" id="ofGo" onclick="askOutfit()">Suggest</button>
     </footer>
   </div>`);
-  outfitPhoto = '';
+  outfitPhoto = ''; outfitColours = [];
   drawOutfitPhoto();
 }
 function drawOutfitPhoto(){
@@ -1820,7 +1980,11 @@ function drawOutfitPhoto(){
 function handleOutfitPhoto(e){
   const file = (e.target.files||[])[0]; if(!file) return;
   const r = new FileReader();
-  r.onload = () => compressDataUrl(r.result).then(d=>{ outfitPhoto = d; drawOutfitPhoto(); e.target.value=''; });
+  r.onload = () => compressDataUrl(r.result).then(async d=>{
+    outfitPhoto = d; drawOutfitPhoto(); e.target.value='';
+    outfitColours = await coloursInPhoto(d);      // read the colours straight away
+    renderDetectedColours();
+  });
   r.readAsDataURL(file);
 }
 /* Only what's needed to make a suggestion — no photos, no notes. */
@@ -1835,26 +1999,63 @@ function cabinetSummary(){
     owner: it.fields.owner || ''
   }));
 }
+let outfitColours = [];
 async function askOutfit(){
   const endpoint = advisorEndpoint();
   const text = ($('#of_text')?.value || '').trim();
   const res = $('#ofResult'), go = $('#ofGo');
-  if(!endpoint){ toast('Add your assistant address in Settings → Assistant first.'); return; }
-  if(!text && !outfitPhoto){ toast('Describe the outfit or add a photo.'); return; }
+  if(!text && !outfitPhoto && !outfitColours.length){ toast('Describe the outfit or add a photo.'); return; }
   go.disabled = true;
-  res.innerHTML = `<p class="hint">Thinking…</p>`;
-  try{
-    const r = await fetch(endpoint, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({outfit:text, image:outfitPhoto || null, items:cabinetSummary()})
-    });
-    if(!r.ok) throw new Error('The assistant answered ' + r.status);
-    const data = await r.json();
-    renderOutfitPicks(data);
-  }catch(e){
-    console.warn(e);
-    res.innerHTML = `<p class="lifeflag lifeflag-warn">Couldn't reach the assistant — ${esc(e.message||'no connection')}.</p>`;
-  }finally{ go.disabled = false; }
+  res.innerHTML = `<p class="hint">Working it out…</p>`;
+
+  /* An assistant, if one has been set up; otherwise the built-in matching. */
+  if(endpoint){
+    try{
+      const r = await fetch(endpoint, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({outfit:text, image:outfitPhoto || null, items:cabinetSummary()})
+      });
+      if(!r.ok) throw new Error('answered ' + r.status);
+      renderOutfitPicks(await r.json());
+      go.disabled = false;
+      return;
+    }catch(e){
+      console.warn('assistant unavailable, using built-in matching', e);
+    }
+  }
+
+  let colours = outfitColours.slice();
+  if(!colours.length){
+    colours = coloursInText(text);
+    if(!colours.length && outfitPhoto) colours = await coloursInPhoto(outfitPhoto);
+    outfitColours = colours;
+  }
+  renderDetectedColours();
+  renderOutfitPicks(suggestLocally(colours, text));
+  go.disabled = false;
+}
+/* Show what it thinks you're wearing, and let it be corrected — guessing
+   colours off a photo is never perfect, so don't pretend otherwise. */
+function renderDetectedColours(){
+  const box = $('#ofColours'); if(!box) return;
+  if(!outfitColours.length){ box.innerHTML = ''; return; }
+  box.innerHTML = `<p class="lbl" style="margin-bottom:.35rem">Reading the outfit as</p>
+    <div class="chipset">
+      ${outfitColours.map((c,i)=>`<button type="button" class="chip" aria-pressed="true" onclick="dropOutfitColour(${i})">
+        <i class="dot" style="background:${hexOf(c)}"></i>${esc(c)} ✕</button>`).join('')}
+      <button type="button" class="chip chip-add" onclick="addOutfitColour()">+ Colour</button>
+    </div>`;
+}
+function dropOutfitColour(i){ outfitColours.splice(i,1); renderDetectedColours(); rerunOutfit(); }
+function addOutfitColour(){
+  const v = prompt('Which colour? (' + COLORS.map(c=>c.name).join(', ') + ')');
+  if(!v || !v.trim()) return;
+  outfitColours.push(v.trim().toLowerCase());
+  renderDetectedColours(); rerunOutfit();
+}
+function rerunOutfit(){
+  if(!outfitColours.length){ $('#ofResult').innerHTML = ''; return; }
+  renderOutfitPicks(suggestLocally(outfitColours, ($('#of_text')?.value||'')));
 }
 function renderOutfitPicks(data){
   const res = $('#ofResult');
@@ -1978,7 +2179,8 @@ function settingsBody(){
   }
   if(setTab==='assistant'){
     const ep = advisorEndpoint();
-    return `<p class="hint" style="margin:0 0 1rem">The outfit suggestions need a little service of your own to hold the API key — it can't live in this page, where anyone could read it. <code>worker.js</code> in the repo is the whole thing, with the setup steps at the top; it runs free on Cloudflare Workers. Paste its address here once it's deployed.</p>
+    return `<p class="hint" style="margin:0 0 1rem">Outfit suggestions work out of the box, on this device, for free — the ✨ button in the top bar. Nothing needs setting up and nothing is uploaded.</p>
+      <p class="hint" style="margin:0 0 1rem">The box below is only if you ever want to hand the thinking to a smarter model instead. <code>worker.js</code> in the repo explains how, using a free-tier key; leave it empty to keep using the built-in matching.</p>
       <div class="field"><label class="lbl" for="ad_ep">Assistant address</label>
         <input class="input" id="ad_ep" placeholder="https://cabinet-advisor.yourname.workers.dev" value="${esc(ep)}"></div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
