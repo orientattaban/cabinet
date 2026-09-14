@@ -256,6 +256,20 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
 .owner-dot{position:absolute;top:.5rem;left:.5rem;width:14px;height:14px;border-radius:50%;
   border:2px solid rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(20,32,29,.35)}
 
+/* searchable dropdown: filter box, then "add new", then the choices A–Z */
+.combo{position:relative}
+.combo-pop{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;max-height:230px;overflow-y:auto;
+  background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--shadow-lift);
+}
+.combo-opt,.combo-add{
+  display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;
+  padding:.5rem .7rem;font-size:.9rem;color:var(--ink);
+}
+.combo-opt:hover,.combo-add:hover{background:rgba(20,32,29,.06)}
+.combo-add{font-weight:700;color:var(--ok);border-bottom:1.5px solid var(--line)}
+.combo-empty{padding:.6rem .7rem;font-size:.85rem;color:var(--ink-faint)}
+
 /* lists managed inline in the form */
 .lblrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin:0 0 .3rem 2px}
 .linklike{font-size:.78rem;font-weight:700;color:var(--ink-soft);text-decoration:underline;text-underline-offset:2px;background:none;padding:0}
@@ -273,6 +287,23 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
   background:rgba(201,154,70,.16);color:#6B4E12}
 .lifeflag-warn{background:rgba(163,52,39,.1);color:var(--danger)}
 .tag-age{background:rgba(20,32,29,.05);color:var(--ink-faint)}
+
+/* first-run choice (giveaway build) */
+.welcome-opt{
+  display:block;width:100%;text-align:left;padding:.85rem .9rem;margin-bottom:.6rem;
+  border:1.5px solid var(--line);border-radius:var(--r-md);background:#FBFCFA;
+}
+.welcome-opt:hover{border-color:var(--brass);background:#fff}
+.welcome-opt .t{display:block;font-family:var(--font-display);font-weight:700;font-size:1.05rem;margin-bottom:.2rem}
+.welcome-opt .s{display:block;font-size:.85rem;color:var(--ink-soft);line-height:1.45}
+
+/* outfit suggestions */
+.pick{display:flex;gap:.7rem;align-items:center;padding:.5rem 0;border-top:1.5px solid var(--line);cursor:pointer}
+.pick:first-of-type{border-top:none}
+.pick:hover{opacity:.85}
+.pick-th{width:56px;height:56px;border-radius:var(--r-sm);overflow:hidden;flex:none;background:#E8EBE5}
+.pick-th img{width:100%;height:100%;object-fit:cover}
+.pick-b{min-width:0}
 
 /* chat */
 .chat-dot{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 3px;border-radius:999px;
@@ -412,6 +443,9 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
         <span>Cabinet</span>
       </div>
       <div class="who-chip"><span class="avatar" id="meAvatar"></span><span id="meName"></span></div>
+      <button class="icon-btn" title="What goes with this?" onclick="openOutfit()" aria-label="Outfit suggestions">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5 10.1 10.9 5.5 9l4.6-1.4L12 3z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/></svg>
+      </button>
       <button class="icon-btn" id="chatBtn" title="Chat" onclick="openChat()" aria-label="Chat" style="position:relative">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-11.6 7.1L4 20.5l1.4-5A8 8 0 1121 12z"/></svg>
         <span class="chat-dot hide" id="chatDot"></span>
@@ -542,6 +576,10 @@ const Store = (() => {
    for a shoe cabinet; worth tightening (Firebase Auth) before anything more
    personal goes in here.
    ========================================================================= */
+/* SHARE_MODE is flipped on in the giveaway build (share/app.html), which ships
+   with no project of its own and no contents — see make-share.py. */
+const SHARE_MODE = false;
+
 /* The shared Firebase project, baked in so both phones sync with nothing to set
    up. Firebase web keys are identifiers, not secrets — they're meant to sit in
    client code; what actually guards the data is the Firestore rules. */
@@ -669,6 +707,26 @@ function saveCloudConfig(){
   toast('Saved — reconnecting…');
   setTimeout(()=>location.reload(), 500);
 }
+function saveAdvisor(){
+  const v = ($('#ad_ep').value||'').trim();
+  if(v && !/^https:\/\//.test(v)){ toast('That should start with https://'); return; }
+  setAdvisorEndpoint(v);
+  toast(v ? 'Saved.' : 'Cleared.');
+  renderSettings();
+}
+async function testAdvisor(){
+  const st = $('#adStatus'); st.textContent = 'Checking…';
+  try{
+    const r = await fetch(advisorEndpoint(), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({outfit:'a plain white t-shirt and blue jeans', items:cabinetSummary().slice(0,8)})
+    });
+    const d = await r.json();
+    st.textContent = r.ok && d && Array.isArray(d.picks)
+      ? 'Working — it suggested ' + d.picks.length + ' thing' + (d.picks.length===1?'':'s') + '.'
+      : 'Reached it, but the answer was not what this app expects.';
+  }catch(e){ st.textContent = 'Could not reach it: ' + (e.message||'no connection'); }
+}
 function disconnectCloud(){
   if(!confirm('Stop syncing on this device? Your data stays here, but changes stop travelling both ways.')) return;
   Cloud.disconnect();
@@ -686,17 +744,26 @@ function reconnectCloud(){
    A field  = { key, label, type, options?, filter? }
      type: text | select | tags | color | textarea
    Add a drawer in Settings, or add one here to ship it as a default.       */
+/* A fixed set of basic colours — no hex codes to type. Anything that isn't on
+   this list (an old entry, or a shade someone adds) simply shows as grey. */
+const FALLBACK_HEX = '#8D9298';
 const COLORS = [
-  {name:'Purple',hex:'#7B4EA8'},{name:'Blue',hex:'#2F6FB5'},{name:'Classic blue',hex:'#1E4C8A'},
-  {name:'Green/Blue',hex:'#2E8B8B'},{name:'Green',hex:'#3C8A55'},{name:'Dirty white',hex:'#DED8C9'},
-  {name:'White',hex:'#F2F2EF'},{name:'Black',hex:'#25282A'},{name:'Grey',hex:'#8D9298'},
-  {name:'Pink',hex:'#D96A94'},{name:'Red',hex:'#C0392B'},{name:'Beige',hex:'#D8C4A6'},
-  {name:'Brown',hex:'#7A5330'},{name:'Silver',hex:'#C3C7CB'},{name:'Multi',hex:'#9B7FB8'}
+  {name:'Beige',hex:'#D8C4A6'}, {name:'Black',hex:'#25282A'}, {name:'Blue',hex:'#2F6FB5'},
+  {name:'Brown',hex:'#7A5330'}, {name:'Cream',hex:'#EFE6D2'}, {name:'Gold',hex:'#C9A227'},
+  {name:'Green',hex:'#3C8A55'}, {name:'Grey',hex:'#8D9298'},  {name:'Multi',hex:'#9B7FB8'},
+  {name:'Navy',hex:'#1E3A66'},  {name:'Olive',hex:'#6B7043'}, {name:'Orange',hex:'#D2712F'},
+  {name:'Pink',hex:'#D96A94'},  {name:'Purple',hex:'#7B4EA8'},{name:'Red',hex:'#C0392B'},
+  {name:'Silver',hex:'#C3C7CB'},{name:'Teal',hex:'#2E8B8B'},  {name:'White',hex:'#F2F2EF'},
+  {name:'Yellow',hex:'#E3B93C'}
 ];
 const OWNERS = ['User 1','User 2','Shared'];
 const OWNER_COLOR = {'User 1':'#6B4E9E', 'User 2':'#B4563F', Shared:'#2C6E52'};
 /* Earlier versions stored real names; everything is generic now. */
 const LEGACY_USERS = {Pearl:'User 1', Char:'User 2'};
+function ownerColor(n){
+  if(!n) return '#5A6763';
+  return OWNER_COLOR[n] || (OWNER_COLOR[n] = pickOwnerColor(n));
+}
 
 const SHOE_FIELDS = [
   {key:'brand', label:'Brand', type:'select', filter:true, options:['Adidas','Nike','Asics','Onitsuka Tiger','New Balance','Hoka','Puma','Skechers','Other']},
@@ -705,7 +772,7 @@ const SHOE_FIELDS = [
   {key:'size', label:'Size', type:'text', filter:true},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
-  {key:'purchased', label:'Bought', type:'month'},
+  {key:'purchased', label:'Purchased on', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
 const BAG_FIELDS = [
@@ -714,7 +781,7 @@ const BAG_FIELDS = [
   {key:'size', label:'Size', type:'text', filter:true},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
-  {key:'purchased', label:'Bought', type:'month'},
+  {key:'purchased', label:'Purchased on', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
 const TUMBLER_FIELDS = [
@@ -723,16 +790,25 @@ const TUMBLER_FIELDS = [
   {key:'size', label:'Capacity', type:'text', filter:true},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
-  {key:'purchased', label:'Bought', type:'month'},
+  {key:'purchased', label:'Purchased on', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
 ];
+/* What a brand-new drawer starts with. Anything else is added as a custom
+   field when the drawer is created, or later from Settings > Drawers. */
 const BLANK_FIELDS = [
-  {key:'brand', label:'Brand', type:'select', filter:true, options:['Other']},
-  {key:'purpose', label:'Category', type:'tags', filter:true, options:['Everyday','Occasion']},
+  {key:'brand', label:'Brand', type:'select', filter:true, options:[]},
   {key:'color', label:'Colour', type:'color', filter:true},
   {key:'owner', label:'Owner', type:'select', filter:true, options:OWNERS},
-  {key:'purchased', label:'Bought', type:'month'},
+  {key:'purchased', label:'Purchased on', type:'month'},
   {key:'notes', label:'Notes', type:'textarea'}
+];
+/* Field types offered when adding a custom field. */
+const FIELD_TYPES = [
+  ['text','Short text'],
+  ['select','Pick one from a list'],
+  ['tags','Pick several from a list'],
+  ['month','Month and year'],
+  ['textarea','Long note']
 ];
 const TEMPLATES = {shoes:SHOE_FIELDS, bags:BAG_FIELDS, tumblers:TUMBLER_FIELDS, blank:BLANK_FIELDS};
 
@@ -757,9 +833,9 @@ function seed(){
     users:{ 'User 1':{pin:hash('1111')}, 'User 2':{pin:hash('2222')} },
     colors:COLORS.slice(),
     drawers:[
-      {id:'shoes',    name:'Shoes',    icon:'👟', noun:'pair',   fields:clone(SHOE_FIELDS)},
-      {id:'bags',     name:'Bags',     icon:'🎒', noun:'bag',    fields:clone(BAG_FIELDS)},
-      {id:'tumblers', name:'Tumblers', icon:'🥤', noun:'tumbler',fields:clone(TUMBLER_FIELDS)}
+      {id:'shoes',    name:'Shoes',    icon:'👟', noun:'pair',   lifespan:'shoes',  fields:clone(SHOE_FIELDS)},
+      {id:'bags',     name:'Bags',     icon:'🎒', noun:'bag',    lifespan:'manual', fields:clone(BAG_FIELDS)},
+      {id:'tumblers', name:'Tumblers', icon:'🥤', noun:'tumbler',lifespan:'manual', fields:clone(TUMBLER_FIELDS)}
     ],
     items:[
       s('Adidas Dropset',      {brand:'Adidas', model:'Dropset',        purpose:['Gym','Hybrid'],  size:'7.5 US W', color:'Purple',       owner:'User 1', notes:'Adizero Dropset Pro — Frozen Purple / Silver Metallic / Cloud White. Flat, stable sole — lifting days.'}, DROPSET_IMAGES),
@@ -858,23 +934,36 @@ function rangeLabel(r){
     ? (r[0]/12) + '–' + (r[1]/12) + ' years'
     : r[0] + '–' + r[1] + ' months');
 }
-function lifespanFor(it){
-  const kind = kindFor(it);
-  const spec = LIFESPAN_BY_KIND[kind];
+/* Shoes get the researched figures above. Every other drawer gets whatever
+   the two of you fill in per item — a bag or a tumbler has no mileage, so it
+   only ever shows the two usage columns. */
+function lifespanFor(it, d){
+  d = d || drawer(it.drawerId || ACTIVE);
+  const mode = d.lifespan || (d.id==='shoes' ? 'shoes' : 'manual');
   const age = ageMonths(it);
-  const out = {kind, spec, age,
-    daily: rangeLabel(spec.daily), weekly: rangeLabel(spec.weekly), steps:null, miles:null};
-  if(spec.miles){
-    out.miles = spec.miles[0] + '–' + spec.miles[1] + ' miles';
-    const s = spec.miles.map(m => Math.round(m*STEPS_PER_MILE/1000));
-    out.steps = s[0] + 'k–' + (s[1] >= 1000 ? (s[1]/1000) + 'M' : s[1] + 'k') + ' steps';
+  if(mode === 'none') return null;
+
+  if(mode === 'shoes'){
+    const kind = kindFor(it);
+    const spec = LIFESPAN_BY_KIND[kind];
+    const out = {mode, age, title:'Typical life of a ' + spec.label, note:spec.note,
+      daily: rangeLabel(spec.daily), weekly: rangeLabel(spec.weekly), miles:null, steps:null};
+    if(spec.miles){
+      out.miles = spec.miles[0] + '–' + spec.miles[1] + ' miles';
+      const s = spec.miles.map(m => Math.round(m*STEPS_PER_MILE/1000));
+      out.steps = s[0] + 'k–' + (s[1] >= 1000 ? (s[1]/1000) + 'M' : s[1] + 'k') + ' steps';
+    }
+    if(age !== null) out.verdict = age > spec.daily[1]
+      ? (age > spec.weekly[1] ? 'past-due' : 'daily-done') : 'fine';
+    return out;
   }
-  if(age !== null){
-    out.verdict = age > spec.daily[1]
-      ? (age > spec.weekly[1] ? 'past-due' : 'daily-done')
-      : 'fine';
-  }
-  return out;
+
+  const f = it.fields || {};
+  const daily = (f.lifeDaily||'').trim(), weekly = (f.lifeWeekly||'').trim();
+  if(!daily && !weekly && age === null) return null;   // nothing to say yet
+  return {mode:'manual', age, daily, weekly, miles:null, steps:null,
+    title: 'Typical life of ' + (d.noun ? 'a ' + d.noun : d.name.toLowerCase()),
+    note: (daily || weekly) ? '' : 'No figures yet — add them below, or look them up on the web.'};
 }
 
 /* Old saves had a single `image` string and real first names — bring both
@@ -893,16 +982,26 @@ function migrate(){
       }
     });
   }
+  /* Shades from the old free-form palette, mapped onto the basic list. */
+  const COLOR_ALIASES = {'classic blue':'Navy','dirty white':'Cream','green/blue':'Teal'};
+  (DB.items||[]).forEach(it=>{
+    const c = it.fields && it.fields.color;
+    if(c && COLOR_ALIASES[String(c).toLowerCase()]) it.fields.color = COLOR_ALIASES[String(c).toLowerCase()];
+  });
+  DB.colors = COLORS.slice();
   (DB.drawers||[]).forEach(d=>{
     (d.fields||[]).forEach(f=>{
       if(f.key==='owner' && Array.isArray(f.options))
         f.options = f.options.map(o => LEGACY_USERS[o] || o);
-      if(f.key==='purchased') f.type = 'month';
+      if(f.key==='purchased'){ f.type = 'month'; f.label = 'Purchased on'; }
+      if(f.options) f.options = sortedOptions(f.options);
     });
+    /* which lifespan guidance this drawer gets */
+    if(!d.lifespan) d.lifespan = d.id === 'shoes' ? 'shoes' : 'manual';
     /* drawers saved before this version have no "Bought" field yet */
     if((d.fields||[]).length && !d.fields.some(f=>f.key==='purchased')){
       const i = d.fields.findIndex(f=>f.key==='notes');
-      const fld = {key:'purchased', label:'Bought', type:'month'};
+      const fld = {key:'purchased', label:'Purchased on', type:'month'};
       if(i >= 0) d.fields.splice(i, 0, fld); else d.fields.push(fld);
     }
   });
@@ -918,7 +1017,18 @@ const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* soft, non-cryptographic code hash — this is a privacy lock, not a vault */
 function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619);} return (h>>>0).toString(36); }
-function hexOf(name){ const c=(DB?.colors||COLORS).find(c=>c.name===name); return c?c.hex:'#B9C0BA'; }
+function hexOf(name){
+  if(!name) return FALLBACK_HEX;
+  const list = (DB && DB.colors && DB.colors.length) ? DB.colors : COLORS;
+  const c = list.find(c => c.name.toLowerCase() === String(name).toLowerCase())
+         || COLORS.find(c => c.name.toLowerCase() === String(name).toLowerCase());
+  return c ? c.hex : FALLBACK_HEX;   // unknown shades show as grey
+}
+/* Options are always presented A–Z, whenever they were added. */
+function sortedOptions(list){
+  return Array.from(new Set((list||[]).filter(Boolean)))
+    .sort((a,b)=>String(a).localeCompare(String(b), undefined, {sensitivity:'base'}));
+}
 function save(){ Store.save(DB); if(Cloud.hasClient()) Cloud.push(DB); }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400); }
 function drawer(id){ return DB.drawers.find(d=>d.id===id) || DB.drawers[0]; }
@@ -932,15 +1042,32 @@ function nameBlock(it){
   return `<span class="modelline">${esc(it.name)}</span>`;
 }
 
-function closeModal(){ $('#modals').innerHTML=''; document.body.style.overflow=''; }
+/* Every sheet pushes a history entry, so the phone's back button (or gesture)
+   closes what's open instead of leaving the app. */
+let modalDepth = 0;
+function closeModal(fromBack){
+  if(!$('#modals').innerHTML) return;
+  $('#modals').innerHTML=''; document.body.style.overflow='';
+  chatOpen = false;
+  if(!fromBack && modalDepth > 0){ modalDepth--; history.back(); }
+}
 function showModal(html){
+  const wasOpen = !!$('#modals').innerHTML;
   $('#modals').innerHTML = `<div class="scrim" onclick="if(event.target===this)closeModal()">${html}</div>`;
   document.body.style.overflow='hidden';
+  if(!wasOpen){ modalDepth++; history.pushState({cabinetModal:modalDepth}, ''); }
 }
+window.addEventListener('popstate', () => {
+  if($('#confirmScrim')){ closeConfirm(); return; }
+  if($('#modals').innerHTML){ modalDepth = Math.max(0, modalDepth-1); closeModal(true); return; }
+  if($('#sidebar')?.classList.contains('open')){ closeSidebar(); return; }
+  /* nothing open — let the browser do whatever it would normally do */
+});
 
 /* ---------- D. LOCK SCREEN ----------------------------------------------- */
 let pinFor = null, pinBuf = '';
 
+function ownerOptions(){ return sortedOptions([...Object.keys(DB.users||{}), 'Shared']); }
 function renderPlates(){
   $('#plates').innerHTML = Object.keys(DB.users).map(n => `
     <button class="plate" onclick="pickUser('${esc(n)}',this)">
@@ -1010,7 +1137,7 @@ function enterApp(){
   $('#lock').classList.add('hide'); $('#app').classList.remove('hide');
   $('#meName').textContent = ME;
   $('#meAvatar').textContent = initials(ME);
-  $('#meAvatar').style.background = OWNER_COLOR[ME] || '#2C6E52';
+  $('#meAvatar').style.background = ownerColor(ME);
   if(!DB.drawers.find(d=>d.id===ACTIVE)) ACTIVE = DB.drawers[0].id;
   renderTabs(); renderRail(); renderGrid();
 }
@@ -1098,7 +1225,7 @@ function visibleItems(){
 function thumbHTML(it){
   const hex = hexOf(it.fields.color);
   const ow = it.fields.owner;
-  const flag = ow ? `<span class="owner-dot" style="background:${OWNER_COLOR[ow]||'#5A6763'}" title="${esc(ow)}" aria-label="${esc(ow)}"></span>` : '';
+  const flag = ow ? `<span class="owner-dot" style="background:${ownerColor(ow)}" title="${esc(ow)}" aria-label="${esc(ow)}"></span>` : '';
   const cover = it.images && it.images[0];
   const inner = cover
     ? `<img src="${esc(cover)}" alt="${esc(it.name)}" loading="lazy" onerror="this.remove()">`
@@ -1146,13 +1273,14 @@ let formPhotos = [];
 /* Each list-backed field carries its own "Edit list" panel, so the choices are
    managed right where they're used instead of over in Settings. */
 function listHeader(f){
-  const editable = f.type==='select' || f.type==='tags' || f.type==='color';
+  /* Colours are a fixed basic palette now, so there's no list to edit there. */
+  const editable = f.type==='select' || f.type==='tags';
   return `<div class="lblrow">
       <span class="lbl" style="margin-bottom:0">${esc(f.label)}</span>
       ${editable ? `<button type="button" class="linklike" onclick="toggleListEditor('${esc(f.key)}')">Edit list</button>` : ''}
     </div>
     ${editable ? `<div class="listeditor hide" id="le_${esc(f.key)}">
-      <p class="hint" style="margin:0 0 .4rem">One choice per line${f.type==='color'?', written as <code>Name = #hex</code>':''}. Removing a line here won't change items already using it.</p>
+      <p class="hint" style="margin:0 0 .4rem">One choice per line. Removing a line here won't change items already using it.</p>
       <textarea class="input" id="lev_${esc(f.key)}" style="min-height:112px;font-size:.86rem"></textarea>
       <div style="display:flex;gap:.45rem;margin-top:.45rem">
         <button type="button" class="btn btn-primary btn-sm" onclick="saveFieldList('${esc(f.key)}')">Save list</button>
@@ -1169,33 +1297,93 @@ function fieldHTML(f, val){
       <input class="input" type="month" id="${id}" value="${esc(val||'')}" max="${new Date().toISOString().slice(0,7)}" onchange="refreshAgeNote()">
       <p class="hint" id="ageNote" style="margin:.35rem 0 0"></p></div>`;
   }
-  if(f.type==='select'){
-    const opts = Array.from(new Set([...(f.options||[]), val].filter(Boolean)));
-    return `<div class="field">${listHeader(f)}
-      <select class="input" id="${id}" onchange="maybeAddOption('${esc(f.key)}')">
-        <option value="">—</option>
-        ${opts.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}
-        <option value="__new__">+ Add new…</option>
-      </select></div>`;
-  }
-  if(f.type==='color'){
-    return `<div class="field">${listHeader(f)}
-      <select class="input" id="${id}" onchange="maybeAddOption('${esc(f.key)}')">
-        <option value="">—</option>
-        ${DB.colors.map(c=>`<option ${c.name===val?'selected':''}>${esc(c.name)}</option>`).join('')}
-        <option value="__new__">+ Add new…</option>
-      </select></div>`;
+  if(f.type==='select' || f.type==='color'){
+    return `<div class="field">${listHeader(f)}${comboHTML(f, val)}</div>`;
   }
   if(f.type==='tags'){
     const sel = asArr(val);
     return `<div class="field">${listHeader(f)}
       <div class="chipset" id="${id}">
-        ${(f.options||[]).map(o=>`<button type="button" class="chip" aria-pressed="${sel.includes(o)}" onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true'?'false':'true')">${esc(o)}</button>`).join('')}
+        ${sortedOptions(f.options).map(o=>`<button type="button" class="chip" aria-pressed="${sel.includes(o)}" onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed')==='true'?'false':'true')">${esc(o)}</button>`).join('')}
         <button type="button" class="chip chip-add" onclick="addTagOption('${esc(f.key)}')">+ Add</button>
       </div></div>`;
   }
   return `<div class="field"><label class="lbl" for="${id}">${esc(f.label)}</label><input class="input" id="${id}" value="${esc(val||'')}"></div>`;
 }
+
+/* ---- the searchable dropdown --------------------------------------------
+   Line one is a text box you can type in to narrow the list; line two is
+   always "add new" for whatever you've typed; below that come the choices,
+   in alphabetical order no matter when they were added.                   */
+function optionsFor(f){
+  return f.type==='color'
+    ? sortedOptions((DB.colors||COLORS).map(c=>c.name))
+    : sortedOptions(f.options);
+}
+function comboHTML(f, val){
+  const id = 'f_'+f.key;
+  return `<div class="combo" id="cb_${esc(f.key)}" data-key="${esc(f.key)}">
+    <input class="input combo-input" id="${id}" value="${esc(val||'')}" autocomplete="off"
+           placeholder="Type to search, or pick below"
+           onfocus="openCombo('${esc(f.key)}')" oninput="filterCombo('${esc(f.key)}')">
+    <div class="combo-pop hide" id="cbp_${esc(f.key)}"></div>
+  </div>`;
+}
+function paintCombo(key){
+  const f = fieldDef(key); if(!f) return;
+  const input = $('#f_'+key), pop = $('#cbp_'+key);
+  if(!input || !pop) return;
+  const q = (input.dataset.q || '').trim().toLowerCase();
+  const all = optionsFor(f);
+  const hits = q ? all.filter(o => o.toLowerCase().includes(q)) : all;
+  const exact = all.some(o => o.toLowerCase() === q);
+  pop.innerHTML =
+    `${q && !exact ? `<button type="button" class="combo-add" onmousedown="event.preventDefault()" onclick="addFromCombo('${esc(key)}')">+ Add “${esc(input.dataset.q)}”</button>` : ''}
+     ${hits.length ? hits.map(o=>`
+        <button type="button" class="combo-opt" onmousedown="event.preventDefault()" onclick="pickCombo('${esc(key)}', this.dataset.v)" data-v="${esc(o)}">
+          ${f.type==='color' ? `<i class="dot" style="background:${hexOf(o)}"></i>` : ''}${esc(o)}
+        </button>`).join('')
+      : (q && exact ? '' : `<div class="combo-empty">Nothing matches — use “+ Add” above.</div>`)}`;
+}
+function openCombo(key){
+  const input = $('#f_'+key); if(!input) return;
+  input.dataset.q = '';
+  paintCombo(key);
+  $('#cbp_'+key)?.classList.remove('hide');
+}
+function closeCombo(key){ $('#cbp_'+key)?.classList.add('hide'); }
+function filterCombo(key){
+  const input = $('#f_'+key); if(!input) return;
+  input.dataset.q = input.value;
+  $('#cbp_'+key)?.classList.remove('hide');
+  paintCombo(key);
+}
+function pickCombo(key, value){
+  const input = $('#f_'+key); if(!input) return;
+  input.value = value; input.dataset.q = '';
+  closeCombo(key);
+  if(key==='brand' || key==='model' || key==='purpose') refreshLifespanNote();
+}
+function addFromCombo(key){
+  const f = fieldDef(key), input = $('#f_'+key);
+  const name = (input.value||'').trim(); if(!name) return;
+  if(f.type==='color'){
+    /* No hex to type — a colour we don't know simply renders grey. */
+    if(!(DB.colors||[]).some(c=>c.name.toLowerCase()===name.toLowerCase()))
+      DB.colors = sortedOptions([...(DB.colors||COLORS).map(c=>c.name), name])
+        .map(n => (DB.colors||COLORS).find(c=>c.name===n) || COLORS.find(c=>c.name===n) || {name:n, hex:FALLBACK_HEX});
+  } else if(!(f.options||[]).some(o=>o.toLowerCase()===name.toLowerCase())){
+    f.options = sortedOptions([...(f.options||[]), name]);
+  }
+  save();
+  pickCombo(key, name);
+  renderRail();
+}
+/* Clicking anywhere else closes any open dropdown. */
+document.addEventListener('click', e=>{
+  if(e.target.closest('.combo')) return;
+  $$('.combo-pop').forEach(p=>p.classList.add('hide'));
+});
 
 /* ---- managing the choice lists from inside the form ---- */
 function fieldDef(key){ return drawer(ACTIVE).fields.find(f=>f.key===key); }
@@ -1204,24 +1392,14 @@ function toggleListEditor(key){
   const box = $('#le_'+key); if(!box) return;
   const f = fieldDef(key);
   if(box.classList.contains('hide')){
-    $('#lev_'+key).value = f.type==='color'
-      ? DB.colors.map(c=>c.name+' = '+c.hex).join('\n')
-      : (f.options||[]).join('\n');
+    $('#lev_'+key).value = sortedOptions(f.options).join('\n');
     box.classList.remove('hide');
   } else box.classList.add('hide');
 }
 function saveFieldList(key){
   const f = fieldDef(key), raw = $('#lev_'+key).value;
   const keep = $('#f_'+key) ? $('#f_'+key).value : '';
-  if(f.type==='color'){
-    const cols = raw.split('\n').map(l=>{
-      const [n,h] = l.split('=').map(s=>(s||'').trim());
-      return n ? {name:n, hex:/^#[0-9a-f]{3,8}$/i.test(h||'') ? h : '#B9C0BA'} : null;
-    }).filter(Boolean);
-    if(cols.length) DB.colors = cols;
-  } else {
-    f.options = raw.split('\n').map(s=>s.trim()).filter(Boolean);
-  }
+  f.options = sortedOptions(raw.split('\n').map(s=>s.trim()).filter(Boolean));
   save();
   refreshField(key, keep);
   renderRail(); renderGrid();
@@ -1237,34 +1415,12 @@ function refreshField(key, keep){
     : keep;
   wrap.outerHTML = fieldHTML(f, selected);
 }
-function maybeAddOption(key){
-  const el = $('#f_'+key);
-  if(!el) return;
-  if(el.value !== '__new__'){ refreshLifespanNote(); return; }   // ordinary pick
-  const f = fieldDef(key);
-  const label = f.type==='color' ? 'New colour name' : 'New ' + f.label.toLowerCase();
-  const v = prompt(label);
-  if(!v || !v.trim()){ el.value = ''; return; }
-  const name = v.trim();
-  if(f.type==='color'){
-    if(!DB.colors.some(c=>c.name.toLowerCase()===name.toLowerCase())){
-      const hex = prompt('Colour code for "'+name+'" (e.g. #8A5A2B)', '#B9C0BA');
-      DB.colors.push({name, hex:/^#[0-9a-f]{3,8}$/i.test((hex||'').trim()) ? hex.trim() : '#B9C0BA'});
-    }
-  } else if(!(f.options||[]).some(o=>o.toLowerCase()===name.toLowerCase())){
-    f.options = [...(f.options||[]), name];
-  }
-  save();
-  refreshField(key, name);
-  renderRail();
-  if(key==='model' || key==='brand') refreshLifespanNote();
-}
 function addTagOption(key){
   const f = fieldDef(key);
   const v = prompt('New ' + f.label.toLowerCase());
   if(!v || !v.trim()) return;
   const name = v.trim();
-  if(!(f.options||[]).some(o=>o.toLowerCase()===name.toLowerCase())) f.options = [...(f.options||[]), name];
+  if(!(f.options||[]).some(o=>o.toLowerCase()===name.toLowerCase())) f.options = sortedOptions([...(f.options||[]), name]);
   save();
   const chosen = $$('#f_'+key+' .chip[aria-pressed="true"]').map(b=>b.textContent.trim());
   chosen.push(name);
@@ -1278,6 +1434,7 @@ function openForm(id){
   const d = drawer(ACTIVE);
   const it = id ? DB.items.find(x=>x.id===id) : null;
   formPhotos = it ? (it.images||[]).slice() : [];
+  LIFE_DRAFT = {daily: (it && it.fields.lifeDaily) || '', weekly: (it && it.fields.lifeWeekly) || ''};
   const defOwner = it ? it.fields.owner : ME;
   showModal(`<div class="sheet" role="dialog" aria-modal="true">
     <header><h2>${it?'Edit':'Add a '+(d.noun||'item')}</h2>
@@ -1328,29 +1485,52 @@ function refreshAgeNote(){
 /* Typical lifespan for whatever brand/model/purpose is currently selected. */
 function refreshLifespanNote(){
   const box = $('#lifespanNote'); if(!box) return;
-  const probe = {fields:{
+  const d = drawer(ACTIVE);
+  const mode = d.lifespan || (d.id==='shoes' ? 'shoes' : 'manual');
+  if(mode === 'none'){ box.innerHTML = ''; return; }
+
+  if(mode === 'manual'){
+    /* No published figures for bags or tumblers — these are yours to fill in. */
+    box.innerHTML = `<div class="lifebox">
+      <div class="lifebox-h">Typical life of ${esc(d.noun ? 'a '+d.noun : d.name.toLowerCase())}</div>
+      <p class="hint" style="margin:0 0 .6rem">However long you'd expect one to last before replacing it. Leave blank if you'd rather not track it.</p>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0"><label class="lbl" for="f_lifeDaily">Almost daily</label>
+          <input class="input" id="f_lifeDaily" placeholder="e.g. 2 years" value="${esc($('#f_lifeDaily')?.value || LIFE_DRAFT.daily || '')}"></div>
+        <div class="field" style="margin-bottom:0"><label class="lbl" for="f_lifeWeekly">1–2× a week</label>
+          <input class="input" id="f_lifeWeekly" placeholder="e.g. 5 years" value="${esc($('#f_lifeWeekly')?.value || LIFE_DRAFT.weekly || '')}"></div>
+      </div>
+      <button type="button" class="linklike" style="margin-top:.6rem" onclick="lookupLifespan()">Look this up on the web</button>
+    </div>`;
+    return;
+  }
+
+  const probe = {drawerId:d.id, fields:{
     brand: $('#f_brand')?.value || '',
     model: $('#f_model')?.value || '',
     purpose: $$('#f_purpose .chip[aria-pressed="true"]').map(b=>b.textContent.trim()),
     purchased: $('#f_purchased')?.value || ''
   }};
   if(!probe.fields.model && !probe.fields.purpose.length){ box.innerHTML = ''; return; }
-  const L = lifespanFor(probe);
+  const L = lifespanFor(probe, d);
   box.innerHTML = `<div class="lifebox">
-    <div class="lifebox-h">Typical life of a ${esc(L.spec.label)}</div>
+    <div class="lifebox-h">${esc(L.title)}</div>
     <dl class="lifegrid">
       <dt>Almost daily</dt><dd>${esc(L.daily)}</dd>
       <dt>1–2× a week</dt><dd>${esc(L.weekly)}</dd>
       ${L.miles?`<dt>Distance</dt><dd>${esc(L.miles)} · about ${esc(L.steps)}</dd>`:''}
     </dl>
-    <p class="hint" style="margin:.5rem 0 0">${esc(L.spec.note)}</p>
+    ${L.note?`<p class="hint" style="margin:.5rem 0 0">${esc(L.note)}</p>`:''}
     ${probe.fields.model ? `<button type="button" class="linklike" style="margin-top:.5rem" onclick="lookupLifespan()">Check the web for this exact model</button>` : ''}
   </div>`;
 }
+let LIFE_DRAFT = {daily:'', weekly:''};
 function lookupLifespan(){
-  const brand = $('#f_brand')?.value || '', model = $('#f_model')?.value || '';
-  const q = (brand + ' ' + model + ' how many miles do they last replace').trim();
-  window.open('https://www.google.com/search?q='+encodeURIComponent(q), '_blank', 'noopener');
+  const d = drawer(ACTIVE);
+  const bits = [$('#f_brand')?.value, $('#f_model')?.value].filter(Boolean).join(' ').trim();
+  const bought = $('#f_purchased')?.value ? ' bought ' + monthName($('#f_purchased').value) : '';
+  const q = (bits || d.name) + ' how long do they last replace' + bought;
+  window.open('https://www.google.com/search?q='+encodeURIComponent(q.trim()), '_blank', 'noopener');
 }
 function drawPrev(){
   const p = $('#prev'); if(!p) return;
@@ -1414,6 +1594,9 @@ function readForm(d){
 function saveItem(id){
   const d = drawer(ACTIVE);
   const fields = readForm(d);
+  /* manual lifespan figures live alongside the drawer's own fields */
+  if($('#f_lifeDaily'))  fields.lifeDaily  = $('#f_lifeDaily').value.trim();
+  if($('#f_lifeWeekly')) fields.lifeWeekly = $('#f_lifeWeekly').value.trim();
   /* The name is no longer typed — it's simply the brand and model. */
   const name = [fields.brand, fields.model].filter(Boolean).join(' ').trim()
             || fields.size || d.noun || 'Item';
@@ -1480,27 +1663,27 @@ function openDetail(id){
     if(!v || (Array.isArray(v)&&!v.length)) return '';
     let disp = Array.isArray(v) ? v.map(x=>`<span class="tag">${esc(x)}</span>`).join(' ')
       : f.type==='color' ? `<span class="tag"><i class="dot" style="background:${hexOf(v)}"></i>${esc(v)}</span>`
-      : f.key==='owner' ? `<span class="tag tag-owner" style="background:${OWNER_COLOR[v]||'#5A6763'}">${esc(v)}</span>`
+      : f.key==='owner' ? `<span class="tag tag-owner" style="background:${ownerColor(v)}">${esc(v)}</span>`
       : f.type==='month' ? esc(monthName(v)) + ' <span class="hint" style="display:inline">· ' + esc(monthsLabel(ageMonths(it))) + ' old</span>'
       : esc(v);
     return `<dt>${esc(f.label)}</dt><dd>${disp}</dd>`;
   }).join('');
-  const L = lifespanFor(it);
-  const verdict = L.verdict === 'past-due'
-      ? `<p class="lifeflag lifeflag-warn">Older than the usual life of a ${esc(L.spec.label)} even at one or two wears a week — worth checking the midsole and tread.</p>`
+  const L = lifespanFor(it, d);
+  const verdict = !L ? '' : L.verdict === 'past-due'
+      ? `<p class="lifeflag lifeflag-warn">Older than the usual life even at one or two wears a week — worth checking the midsole and tread.</p>`
     : L.verdict === 'daily-done'
       ? `<p class="lifeflag">Past the usual life if it's been worn almost daily, still within range at one or two wears a week.</p>`
     : '';
-  const lifeHTML = `<div class="lifebox" style="margin-top:1rem">
-      <div class="lifebox-h">Typical life of a ${esc(L.spec.label)}</div>
+  const lifeHTML = !L ? '' : `<div class="lifebox" style="margin-top:1rem">
+      <div class="lifebox-h">${esc(L.title)}</div>
       <dl class="lifegrid">
-        <dt>Almost daily</dt><dd>${esc(L.daily)}</dd>
-        <dt>1–2× a week</dt><dd>${esc(L.weekly)}</dd>
+        ${L.daily?`<dt>Almost daily</dt><dd>${esc(L.daily)}</dd>`:''}
+        ${L.weekly?`<dt>1–2× a week</dt><dd>${esc(L.weekly)}</dd>`:''}
         ${L.miles?`<dt>Distance</dt><dd>${esc(L.miles)} · about ${esc(L.steps)}</dd>`:''}
-        ${L.age!==null?`<dt>This pair</dt><dd>${esc(monthsLabel(L.age))} old</dd>`:''}
+        ${L.age!==null?`<dt>This one</dt><dd>${esc(monthsLabel(L.age))} old</dd>`:''}
       </dl>
       ${verdict}
-      <p class="hint" style="margin:.5rem 0 0">${esc(L.spec.note)}</p>
+      ${L.note?`<p class="hint" style="margin:.5rem 0 0">${esc(L.note)}</p>`:''}
     </div>`;
   showModal(`<div class="sheet" role="dialog" aria-modal="true">
     <header><h2>${nameBlock(it)}</h2><button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
@@ -1585,7 +1768,7 @@ function paintChat(){
     const fresh = !mine && m.at > seen;
     return `<div class="msg ${mine?'msg-mine':''}">
       <div class="msg-b${fresh?' msg-new':''}">
-        ${mine?'':`<span class="msg-who" style="color:${OWNER_COLOR[m.from]||'#5A6763'}">${esc(m.from)}</span>`}
+        ${mine?'':`<span class="msg-who" style="color:${ownerColor(m.from)}">${esc(m.from)}</span>`}
         <span class="msg-t">${esc(m.text)}</span>
         <span class="msg-at">${esc(chatTime(m.at))}</span>
       </div>
@@ -1616,6 +1799,118 @@ async function sendChat(){
   }
 }
 
+/* ---------- H3. OUTFIT ADVISOR -------------------------------------------
+   Describe (or photograph) what you're wearing and get back things from this
+   cabinet that would go with it. The thinking happens in a small worker you
+   host yourself — the API key lives there, never in this file, because
+   anything in here is readable by anyone who opens the page.             */
+const ADVISOR_KEY = 'cabinet.advisor.v1';
+function advisorEndpoint(){
+  try{ return (JSON.parse(localStorage.getItem(ADVISOR_KEY)||'{}').endpoint || '').trim(); }catch(e){ return ''; }
+}
+function setAdvisorEndpoint(url){ localStorage.setItem(ADVISOR_KEY, JSON.stringify({endpoint:url})); }
+
+let outfitPhoto = '';
+function openOutfit(){
+  showModal(`<div class="sheet" role="dialog" aria-modal="true" style="max-width:560px">
+    <header><h2>What goes with this?</h2>
+      <button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
+    <div class="content">
+      ${advisorEndpoint() ? '' : `<p class="lifeflag" style="margin-top:0">This needs a one-off setup: a small service of your own that holds the API key. Settings → Assistant has the address field, and the repo has the worker code and steps.</p>`}
+      <div class="field">
+        <label class="lbl" for="of_text">What are you wearing?</label>
+        <textarea class="input" id="of_text" placeholder="e.g. cream linen trousers and a navy shirt, dinner out"></textarea>
+        <p class="hint">Describe it, add a photo, or both.</p>
+      </div>
+      <div class="photo-pick">
+        <div class="photo-gallery" id="ofPrev"></div>
+        <div class="photo-acts">
+          <input type="file" id="ofCam" accept="image/*" capture="environment" class="hide" onchange="handleOutfitPhoto(event)">
+          <input type="file" id="ofLib" accept="image/*" class="hide" onchange="handleOutfitPhoto(event)">
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('ofCam').click()">📷 Take a photo</button>
+          <button type="button" class="btn btn-sm" onclick="document.getElementById('ofLib').click()">Choose a photo</button>
+        </div>
+      </div>
+      <div id="ofResult"></div>
+    </div>
+    <footer>
+      <span class="grow"></span>
+      <button class="btn btn-primary" id="ofGo" onclick="askOutfit()">Suggest</button>
+    </footer>
+  </div>`);
+  outfitPhoto = '';
+  drawOutfitPhoto();
+}
+function drawOutfitPhoto(){
+  const p = $('#ofPrev'); if(!p) return;
+  p.innerHTML = outfitPhoto
+    ? `<div class="photo-thumb"><img src="${esc(outfitPhoto)}" alt=""><button type="button" class="rm" onclick="outfitPhoto='';drawOutfitPhoto()">✕</button></div>`
+    : `<div class="photo-empty">No photo — a description on its own works too</div>`;
+}
+function handleOutfitPhoto(e){
+  const file = (e.target.files||[])[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = () => compressDataUrl(r.result).then(d=>{ outfitPhoto = d; drawOutfitPhoto(); e.target.value=''; });
+  r.readAsDataURL(file);
+}
+/* Only what's needed to make a suggestion — no photos, no notes. */
+function cabinetSummary(){
+  return DB.items.map(it=>({
+    id: it.id,
+    drawer: (drawer(it.drawerId)||{}).name,
+    brand: it.fields.brand || '',
+    model: it.fields.model || '',
+    colour: it.fields.color || '',
+    purpose: asArr(it.fields.purpose).join(', '),
+    owner: it.fields.owner || ''
+  }));
+}
+async function askOutfit(){
+  const endpoint = advisorEndpoint();
+  const text = ($('#of_text')?.value || '').trim();
+  const res = $('#ofResult'), go = $('#ofGo');
+  if(!endpoint){ toast('Add your assistant address in Settings → Assistant first.'); return; }
+  if(!text && !outfitPhoto){ toast('Describe the outfit or add a photo.'); return; }
+  go.disabled = true;
+  res.innerHTML = `<p class="hint">Thinking…</p>`;
+  try{
+    const r = await fetch(endpoint, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({outfit:text, image:outfitPhoto || null, items:cabinetSummary()})
+    });
+    if(!r.ok) throw new Error('The assistant answered ' + r.status);
+    const data = await r.json();
+    renderOutfitPicks(data);
+  }catch(e){
+    console.warn(e);
+    res.innerHTML = `<p class="lifeflag lifeflag-warn">Couldn't reach the assistant — ${esc(e.message||'no connection')}.</p>`;
+  }finally{ go.disabled = false; }
+}
+function renderOutfitPicks(data){
+  const res = $('#ofResult');
+  const picks = Array.isArray(data && data.picks) ? data.picks : [];
+  if(!picks.length){
+    res.innerHTML = `<p class="hint">${esc((data && data.note) || 'Nothing in the cabinet stood out as a match.')}</p>`;
+    return;
+  }
+  res.innerHTML = `<div class="lifebox" style="margin-top:.6rem">
+    <div class="lifebox-h">Goes well with that</div>
+    ${picks.map(p=>{
+      const it = DB.items.find(x=>x.id===p.id);
+      if(!it) return '';
+      const cover = (it.images||[])[0];
+      return `<div class="pick" onclick="closeModal();openDetail('${it.id}')">
+        <div class="pick-th">${cover?`<img src="${esc(cover)}" alt="">`:`<div class="ph" style="background:${hexOf(it.fields.color)};height:100%"></div>`}</div>
+        <div class="pick-b">
+          <div class="nm">${nameBlock(it)}</div>
+          <p class="hint" style="margin:.2rem 0 0">${esc(p.why||'')}</p>
+        </div>
+      </div>`;
+    }).join('')}
+    ${data.note?`<p class="hint" style="margin:.6rem 0 0">${esc(data.note)}</p>`:''}
+  </div>`;
+}
+
 /* ---------- I. SETTINGS --------------------------------------------------- */
 let setTab = 'drawers';
 function openSettings(tab){ setTab = tab || 'drawers'; renderSettings(); }
@@ -1624,7 +1919,7 @@ function renderSettings(){
     <header><h2>Settings</h2><button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
     <div class="content">
       <div class="seg" role="tablist">
-        ${[['drawers','Drawers'],['lists','Lists'],['people','People'],['sync','Sync'],['data','Data']].map(([k,l])=>
+        ${[['drawers','Drawers'],['lists','Lists'],['people','People'],['sync','Sync'],['assistant','Assistant'],['data','Data']].map(([k,l])=>
           `<button role="tab" aria-selected="${setTab===k}" onclick="setTab='${k}';renderSettings()">${l}</button>`).join('')}
       </div>
       <div id="setBody">${settingsBody()}</div>
@@ -1634,11 +1929,12 @@ function renderSettings(){
 function settingsBody(){
   if(setTab==='drawers'){
     return `${DB.drawers.map(d=>`
-      <div class="listrow">
+      <div class="listrow" style="flex-wrap:wrap">
         <span style="font-size:1.35rem">${d.icon||'📦'}</span>
         <span class="gr"><span class="t">${esc(d.name)}</span><br>
-          <span class="s">${DB.items.filter(i=>i.drawerId===d.id).length} items · one ${esc(d.noun||'item')}</span></span>
+          <span class="s">${DB.items.filter(i=>i.drawerId===d.id).length} items · one ${esc(d.noun||'item')} · ${d.fields.length} fields</span></span>
         <button class="btn btn-sm" onclick="renameDrawer('${d.id}')">Rename</button>
+        <button class="btn btn-sm" onclick="editDrawerFields('${d.id}')">Fields</button>
         <button class="btn btn-danger btn-sm" onclick="deleteDrawer('${d.id}')">Delete</button>
       </div>`).join('')}
       <div style="margin-top:1.2rem;padding-top:1.1rem;border-top:1.5px solid var(--line)">
@@ -1671,12 +1967,23 @@ function settingsBody(){
       <button class="btn btn-primary" onclick="saveLists()">Save lists</button>`;
   }
   if(setTab==='people'){
-    return `${Object.keys(DB.users).map(n=>`
+    const names = Object.keys(DB.users);
+    return `${names.map(n=>`
       <div class="listrow">
-        <span class="avatar" style="background:${OWNER_COLOR[n]||'#5A6763'}">${initials(n)}</span>
+        <span class="avatar" style="background:${ownerColor(n)}">${initials(n)}</span>
         <span class="gr"><span class="t">${esc(n)}</span><br><span class="s">${DB.items.filter(i=>i.fields.owner===n).length} things owned</span></span>
-        <button class="btn btn-sm" onclick="changePin('${esc(n)}')">Change code</button>
+        <button class="btn btn-sm" onclick="renameUser('${esc(n)}')">Rename</button>
+        <button class="btn btn-sm" onclick="changePin('${esc(n)}')">Code</button>
+        ${names.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${esc(n)}')">Remove</button>` : ''}
       </div>`).join('')}
+      <div style="margin-top:1.2rem;padding-top:1.1rem;border-top:1.5px solid var(--line)">
+        <h3 style="font-size:1.05rem;margin-bottom:.7rem">Add someone</h3>
+        <div class="row2">
+          <div class="field"><label class="lbl" for="nu_name">Name</label><input class="input" id="nu_name" placeholder="User 3"></div>
+          <div class="field"><label class="lbl" for="nu_pin">4-digit code</label><input class="input" id="nu_pin" inputmode="numeric" maxlength="4" placeholder="3333"></div>
+        </div>
+        <button class="btn btn-primary" onclick="addUser()">Add user</button>
+      </div>
       <p class="hint" style="margin-top:1rem">The code keeps the cabinet private on a shared phone. It is not bank-grade security — anyone who can open this file's source can read the data.</p>`;
   }
   if(setTab==='sync'){
@@ -1698,6 +2005,17 @@ function settingsBody(){
           ? `<button class="btn btn-danger btn-sm" onclick="disconnectCloud()">Stop syncing on this device</button>`
           : `<button class="btn btn-sm" onclick="reconnectCloud()">Turn syncing back on</button>`}
       </div>`;
+  }
+  if(setTab==='assistant'){
+    const ep = advisorEndpoint();
+    return `<p class="hint" style="margin:0 0 1rem">The outfit suggestions need a little service of your own to hold the API key — it can't live in this page, where anyone could read it. <code>worker.js</code> in the repo is the whole thing, with the setup steps at the top; it runs free on Cloudflare Workers. Paste its address here once it's deployed.</p>
+      <div class="field"><label class="lbl" for="ad_ep">Assistant address</label>
+        <input class="input" id="ad_ep" placeholder="https://cabinet-advisor.yourname.workers.dev" value="${esc(ep)}"></div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveAdvisor()">Save</button>
+        ${ep?`<button class="btn btn-sm" onclick="testAdvisor()">Test it</button>`:''}
+      </div>
+      <p class="hint" id="adStatus" style="margin-top:.9rem">${ep?'Set up. Use the ✨ button in the top bar.':'Not set up — the ✨ button will explain what it needs.'}</p>`;
   }
   const kb = Math.round(Store.bytes()/1024);
   const pct = Math.min(100, Math.round(kb/5120*100));
@@ -1737,10 +2055,100 @@ function addDrawer(){
   const name = $('#nd_name').value.trim();
   if(!name){ toast('Name the drawer first.'); return; }
   const tpl = $('#nd_tpl').value;
-  const d = {id:uid(), name, icon:$('#nd_icon').value.trim()||'📦', noun:$('#nd_noun').value.trim()||'item', fields:clone(TEMPLATES[tpl])};
+  const fields = clone(TEMPLATES[tpl]);
+  fields.forEach(f=>{ if(f.key==='owner') f.options = ownerOptions(); });
+  const d = {id:uid(), name, icon:$('#nd_icon').value.trim()||'📦',
+             noun:$('#nd_noun').value.trim()||'item',
+             lifespan: tpl==='shoes' ? 'shoes' : 'manual', fields};
   DB.drawers.push(d); ACTIVE = d.id;
-  save(); renderTabs(); renderRail(); renderGrid(); renderSettings();
-  toast(`${name} added.`);
+  save(); renderTabs(); renderRail(); renderGrid();
+  editDrawerFields(d.id);
+  toast(`${name} added — add any fields you need.`);
+}
+
+/* ---- custom fields per drawer ---- */
+function editDrawerFields(id){
+  const d = drawer(id);
+  showModal(`<div class="sheet" role="dialog" aria-modal="true">
+    <header><h2>${esc(d.icon||'📦')} ${esc(d.name)} — fields</h2>
+      <button class="btn btn-quiet btn-sm" onclick="closeModal();openSettings('drawers')">Done</button></header>
+    <div class="content">
+      <p class="hint" style="margin:0 0 .8rem">These are the details you fill in for every ${esc(d.noun||'item')}. Drop the ones you don't need and add your own.</p>
+      <div id="fieldRows">${drawerFieldRows(d)}</div>
+      <div style="margin-top:1.1rem;padding-top:1rem;border-top:1.5px solid var(--line)">
+        <h3 style="font-size:1.02rem;margin-bottom:.6rem">Add a field</h3>
+        <div class="row2">
+          <div class="field"><label class="lbl" for="nf_label">Label</label>
+            <input class="input" id="nf_label" placeholder="e.g. Material"></div>
+          <div class="field"><label class="lbl" for="nf_type">Kind</label>
+            <select class="input" id="nf_type">${FIELD_TYPES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addCustomField('${d.id}')">Add field</button>
+      </div>
+      <div style="margin-top:1.1rem;padding-top:1rem;border-top:1.5px solid var(--line)">
+        <label class="lbl" for="d_life">Lifespan guidance</label>
+        <select class="input" id="d_life" onchange="setDrawerLifespan('${d.id}', this.value)">
+          <option value="shoes"  ${d.lifespan==='shoes'?'selected':''}>Use the built-in shoe figures</option>
+          <option value="manual" ${d.lifespan==='manual'?'selected':''}>Let us type our own per item</option>
+          <option value="none"   ${d.lifespan==='none'?'selected':''}>Don't track it here</option>
+        </select>
+      </div>
+    </div>
+  </div>`);
+}
+function drawerFieldRows(d){
+  const FIXED = ['owner'];
+  return d.fields.map((f,i)=>`
+    <div class="listrow">
+      <span class="gr"><span class="t">${esc(f.label)}</span><br>
+        <span class="s">${esc((FIELD_TYPES.find(t=>t[0]===f.type)||[,f.type])[1])}${f.filter?' · filterable':''}</span></span>
+      <button class="btn btn-sm" onclick="moveField('${d.id}',${i},-1)" ${i===0?'disabled':''}>↑</button>
+      <button class="btn btn-sm" onclick="moveField('${d.id}',${i},1)" ${i===d.fields.length-1?'disabled':''}>↓</button>
+      ${FIXED.includes(f.key) ? '' : `<button class="btn btn-danger btn-sm" onclick="removeField('${d.id}','${esc(f.key)}')">Remove</button>`}
+    </div>`).join('');
+}
+function addCustomField(id){
+  const d = drawer(id);
+  const label = ($('#nf_label').value||'').trim();
+  const type = $('#nf_type').value;
+  if(!label){ toast('Give the field a label.'); return; }
+  let key = label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') || 'field';
+  if(d.fields.some(f=>f.key===key)) key += '_' + uid().slice(0,4);
+  const f = {key, label, type};
+  if(type==='select' || type==='tags'){ f.options = []; f.filter = true; }
+  if(type==='text') f.filter = true;
+  const i = d.fields.findIndex(x=>x.key==='notes');
+  if(i>=0) d.fields.splice(i,0,f); else d.fields.push(f);
+  save();
+  $('#fieldRows').innerHTML = drawerFieldRows(d);
+  $('#nf_label').value = '';
+  renderRail();
+  toast(label + ' added.');
+}
+function removeField(id, key){
+  const d = drawer(id), f = d.fields.find(x=>x.key===key);
+  askConfirm({
+    title:'Remove “' + f.label + '”?',
+    body:'It disappears from the form and from every ' + esc(d.noun||'item') + ' card. Anything already recorded in it is kept, just hidden.',
+    confirmLabel:'Remove field', danger:true,
+    onYes(){
+      d.fields = d.fields.filter(x=>x.key!==key);
+      save();
+      $('#fieldRows') && ($('#fieldRows').innerHTML = drawerFieldRows(d));
+      renderRail(); renderGrid();
+      toast('Field removed.');
+    }
+  });
+}
+function moveField(id, i, dir){
+  const d = drawer(id), j = i + dir;
+  if(j < 0 || j >= d.fields.length) return;
+  [d.fields[i], d.fields[j]] = [d.fields[j], d.fields[i]];
+  save();
+  $('#fieldRows').innerHTML = drawerFieldRows(d);
+}
+function setDrawerLifespan(id, mode){
+  drawer(id).lifespan = mode; save(); toast('Saved.');
 }
 function saveLists(){
   const d = drawer(ACTIVE);
@@ -1761,6 +2169,65 @@ function changePin(name){
   if(p===null) return;
   if(!/^\d{4}$/.test(p)){ toast('Use exactly four digits.'); return; }
   DB.users[name].pin = hash(p); save(); toast('Code changed.');
+}
+/* Renaming carries the person's things with them. */
+function renameUser(name){
+  const v = prompt('Name for this user', name);
+  if(v===null) return;
+  const next = v.trim();
+  if(!next || next === name) return;
+  if(DB.users[next]){ toast('There is already someone with that name.'); return; }
+  DB.users[next] = DB.users[name];
+  delete DB.users[name];
+  DB.items.forEach(i=>{ if(i.fields.owner === name) i.fields.owner = next; });
+  DB.drawers.forEach(d=>d.fields.forEach(f=>{
+    if(f.key==='owner' && Array.isArray(f.options))
+      f.options = sortedOptions(f.options.map(o => o===name ? next : o));
+  }));
+  if(ME === name){ ME = next; rememberUnlock(next); }
+  if(!OWNER_COLOR[next]) OWNER_COLOR[next] = pickOwnerColor(next);
+  save(); renderPlates(); renderTabs(); renderRail(); renderGrid(); renderSettings();
+  toast('Renamed.');
+}
+function addUser(){
+  const name = ($('#nu_name').value||'').trim();
+  const pin  = ($('#nu_pin').value||'').trim();
+  if(!name){ toast('Give them a name.'); return; }
+  if(DB.users[name]){ toast('There is already someone with that name.'); return; }
+  if(!/^\d{4}$/.test(pin)){ toast('The code needs to be exactly four digits.'); return; }
+  DB.users[name] = {pin:hash(pin)};
+  OWNER_COLOR[name] = OWNER_COLOR[name] || pickOwnerColor(name);
+  DB.drawers.forEach(d=>d.fields.forEach(f=>{
+    if(f.key==='owner') f.options = sortedOptions([...(f.options||[]), name]);
+  }));
+  save(); renderPlates(); renderRail(); renderSettings();
+  toast(name + ' added.');
+}
+function deleteUser(name){
+  const owned = DB.items.filter(i=>i.fields.owner===name).length;
+  askConfirm({
+    title:'Remove ' + name + '?',
+    body: owned
+      ? `They own <strong>${owned}</strong> thing${owned===1?'':'s'} in here. Those stay, but become unassigned.`
+      : 'They own nothing in here, so nothing else changes.',
+    confirmLabel:'Remove them', danger:true,
+    onYes(){
+      delete DB.users[name];
+      DB.items.forEach(i=>{ if(i.fields.owner===name) i.fields.owner=''; });
+      DB.drawers.forEach(d=>d.fields.forEach(f=>{
+        if(f.key==='owner' && Array.isArray(f.options)) f.options = f.options.filter(o=>o!==name);
+      }));
+      if(ME === name) lockNow();
+      save(); renderPlates(); renderRail(); renderGrid(); renderSettings();
+      toast('Removed.');
+    }
+  });
+}
+/* Stable colour for any user beyond the first two. */
+const OWNER_PALETTE = ['#6B4E9E','#B4563F','#2C6E52','#2F6FB5','#A97E30','#7A5330','#2E8B8B'];
+function pickOwnerColor(name){
+  let h = 0; for(let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
+  return OWNER_PALETTE[h % OWNER_PALETTE.length];
 }
 function exportData(){
   const blob = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
@@ -1791,6 +2258,45 @@ function resetAll(){
   toast('Reset done.');
 }
 
+/* ---------- I2. FIRST RUN (giveaway build only) ---------------------------
+   Two ways to keep things, chosen once and changeable later. Nothing leaves
+   the device unless the second one is picked, and even then it goes to a
+   project the person creates on their own Google account — nobody else can
+   reach it, including whoever passed them this app.                       */
+function showWelcome(){
+  $('#lock').classList.add('hide');
+  $('#modals').innerHTML = `<div class="scrim" style="background:var(--teal)">
+    <div class="sheet" role="dialog" aria-modal="true" style="max-width:520px">
+      <header><h2>Welcome to your Cabinet</h2></header>
+      <div class="content">
+        <p style="margin-top:0">Somewhere to keep track of the things you own — shoes, bags, whatever you like — with photos, filters and a four-digit lock.</p>
+        <p class="lbl" style="margin-top:1.1rem">Where should it keep everything?</p>
+        <button class="welcome-opt" onclick="chooseStorage('device')">
+          <span class="t">Just on this device</span>
+          <span class="s">Nothing is uploaded anywhere. Works offline. Only this phone or computer sees it — and only this one, so it won't appear on your other devices.</span>
+        </button>
+        <button class="welcome-opt" onclick="chooseStorage('cloud')">
+          <span class="t">In my own Google account</span>
+          <span class="s">You create a free Firebase project under your own Gmail — takes about five minutes — and everything lives there. It syncs across your devices, and you can share it with anyone you choose by giving them the same details. Nobody else can see it.</span>
+        </button>
+        <p class="hint" style="margin-top:1rem">You can switch later in Settings → Sync. Your code starts as <strong>1111</strong> — change it in Settings → People.</p>
+      </div>
+    </div>
+  </div>`;
+  document.body.style.overflow='hidden';
+}
+function chooseStorage(which){
+  localStorage.setItem('cabinet.welcomed', which);
+  $('#modals').innerHTML=''; document.body.style.overflow='';
+  $('#lock').classList.remove('hide');
+  if(which === 'cloud'){
+    ME = Object.keys(DB.users)[0];
+    enterApp();
+    openSettings('sync');
+    toast('Follow the steps under Sync to connect your Google account.');
+  }
+}
+
 /* ---------- J. BOOT ------------------------------------------------------- */
 (async function boot(){
   DB = await Store.load();
@@ -1799,6 +2305,7 @@ function resetAll(){
   migrate();
   ACTIVE = DB.drawers[0].id;
   buildPad(); renderPlates();
+  if(SHARE_MODE && !localStorage.getItem('cabinet.welcomed')) return showWelcome();
   if(restoreUnlock()) enterApp();   // a refresh shouldn't ask for the code again
 
   // Optional shared backend: if Settings > Sync has been configured, connect,
