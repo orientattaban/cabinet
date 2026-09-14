@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cabinet — keep track of what you own</title>
+<meta name="description" content="A small private app for cataloguing the things you own, with photos, filters and a lock. Free, yours, and nobody else can see your data.">
+<link rel="icon" href="../icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Karla:ital,wght@0,400;0,500;0,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14201D; --ink-soft:#5A6763; --ink-faint:#8D9793;
+  --paper:#E9ECE7; --card:#FFFFFF; --line:#D9DED8;
+  --teal:#14332E; --teal-lift:#1E4B43; --brass:#C99A46; --brass-deep:#A97E30;
+  --r-sm:8px; --r-md:14px; --r-lg:22px;
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-ui:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-ui);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;letter-spacing:-.015em;margin:0;line-height:1.15}
+a{color:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:0 1.15rem}
+
+.hero{background:var(--teal);color:#EAF0EC;padding:3.2rem 0 3.6rem;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 7px)}
+.mark{display:flex;align-items:center;gap:.6rem;margin-bottom:1.6rem}
+.mark span{font-family:var(--font-display);font-weight:700;font-size:1.25rem;color:#F4F6F3}
+.hero h1{font-size:clamp(2.2rem,7vw,3.2rem);color:#F4F6F3;margin-bottom:.7rem}
+.hero p{color:rgba(234,240,236,.76);font-size:1.08rem;max-width:46ch;margin:0 0 2rem}
+.cta{display:flex;gap:.7rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.8rem 1.35rem;
+  border-radius:999px;font-weight:700;font-size:1rem;border:1.5px solid transparent;cursor:pointer;text-decoration:none}
+.btn-brass{background:var(--brass);color:#241A06}
+.btn-brass:hover{background:var(--brass-deep)}
+.btn-ghost{border-color:rgba(255,255,255,.3);color:#EAF0EC;background:transparent}
+.btn-ghost:hover{border-color:#EAF0EC}
+
+section{padding:2.8rem 0}
+section h2{font-size:1.5rem;margin-bottom:.5rem}
+.lede{color:var(--ink-soft);margin:0 0 1.6rem;max-width:58ch}
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-md);padding:1.1rem}
+.card h3{font-size:1.05rem;margin-bottom:.35rem}
+.card p{margin:0;font-size:.93rem;color:var(--ink-soft)}
+.choice{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-md);padding:1.15rem;margin-bottom:.9rem}
+.choice h3{font-size:1.1rem;margin-bottom:.3rem}
+.choice p{margin:0;color:var(--ink-soft);font-size:.95rem}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:.2rem .55rem;border-radius:999px;background:rgba(20,32,29,.07);color:var(--ink-soft);margin-bottom:.5rem}
+footer{border-top:1.5px solid var(--line);padding:1.8rem 0 2.6rem;color:var(--ink-faint);font-size:.88rem}
+code{background:rgba(20,32,29,.06);padding:.1rem .35rem;border-radius:5px;font-size:.88em}
+@media(max-width:520px){ .cta .btn{width:100%} }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="mark">
+      <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="16" fill="#0E2622"/>
+        <rect x="11" y="14" width="42" height="15" rx="4.5" fill="#C99A46"/>
+        <rect x="11" y="35" width="42" height="15" rx="4.5" fill="#C99A46"/>
+        <circle cx="43" cy="21.5" r="2.6" fill="#0E2622"/>
+        <circle cx="43" cy="42.5" r="2.6" fill="#0E2622"/>
+      </svg>
+      <span>Cabinet</span>
+    </div>
+    <h1>Keep track of what you own.</h1>
+    <p>Shoes, bags, tumblers — whatever fills your cupboards. Photograph it, filter it, and know how old everything is. Yours alone: nobody else can see what you put in.</p>
+    <div class="cta">
+      <button class="btn btn-brass" id="dl">Download it</button>
+      <a class="btn btn-ghost" href="app.html">Try it in the browser</a>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="lede">One page, no account, no subscription. It installs to your home screen and works without a signal.</p>
+    <div class="grid">
+      <div class="card"><h3>Drawers for anything</h3><p>Start with shoes, bags and tumblers, or make your own and choose exactly which details each one tracks.</p></div>
+      <div class="card"><h3>Filters that narrow</h3><p>Pick a brand and every other filter shrinks to what that brand actually has. Like a good online shop.</p></div>
+      <div class="card"><h3>Several photos each</h3><p>Shoot straight from your phone camera. Photos are compressed on the way in so you don't fill your storage.</p></div>
+      <div class="card"><h3>How old, and how long</h3><p>Record when you bought something and see its age, alongside how long that kind of thing usually lasts.</p></div>
+      <div class="card"><h3>A four-digit lock</h3><p>Keeps it private on a shared phone. More than one person can have their own code and their own things.</p></div>
+      <div class="card"><h3>Works offline</h3><p>Install it once and it opens with no connection at all — on a plane, in a basement, anywhere.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:.5rem">
+  <div class="wrap">
+    <h2>Where your things are kept</h2>
+    <p class="lede">You choose the first time you open it, and you can change your mind later.</p>
+
+    <div class="choice">
+      <span class="pill">Option one</span>
+      <h3>Just on this device</h3>
+      <p>Everything stays in the browser on the device you're using. Nothing is uploaded anywhere, nothing needs signing up for, and it works with no connection. The trade-off is that it stays on that one device.</p>
+    </div>
+
+    <div class="choice">
+      <span class="pill">Option two</span>
+      <h3>In your own Google account</h3>
+      <p>Create a free Firebase project under your own Gmail — about five minutes — and the app keeps everything there instead. It then syncs across your phone, tablet and computer, and you can share the cabinet with anyone you choose by giving them the same details. It is your project on your account: the person who gave you this app cannot see any of it.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p style="margin:0 0 .4rem">Downloading gives you a single <code>.html</code> file. Open it in any browser — that's the whole app, nothing to install.</p>
+    <p style="margin:0">Made with Claude. Use it however you like.</p>
+  </div>
+</footer>
+
+<script>
+/* Hand over the app as one self-contained file. */
+document.getElementById('dl').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  const original = btn.textContent;
+  btn.textContent = 'Preparing…';
+  btn.disabled = true;
+  try {
+    const res = await fetch('app.html');
+    if (!res.ok) throw new Error(res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cabinet.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    btn.textContent = 'Downloaded ✓';
+  } catch (err) {
+    btn.textContent = 'Download failed — try again';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = original; }, 3500);
+  }
+});
+</script>
+</body>
+</html>
