@@ -297,6 +297,54 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
 .welcome-opt .t{display:block;font-family:var(--font-display);font-weight:700;font-size:1.05rem;margin-bottom:.2rem}
 .welcome-opt .s{display:block;font-size:.85rem;color:var(--ink-soft);line-height:1.45}
 
+/* wear log */
+.wearbox{background:#F4F6F2;border:1.5px solid var(--line);border-radius:var(--r-md);padding:.8rem .9rem;margin-bottom:.9rem}
+.wearbox.wear-hot{background:rgba(201,154,70,.12);border-color:rgba(201,154,70,.5)}
+.wearbox.wear-idle{background:rgba(163,52,39,.07);border-color:rgba(163,52,39,.28)}
+.wearhead{display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap}
+.wearflag{font-family:var(--font-display);font-weight:700;font-size:1rem}
+.wearstats{display:flex;gap:1.1rem;margin:.55rem 0;font-size:.86rem;color:var(--ink-soft)}
+.wearacts{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center}
+.wearlist{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.6rem}
+.weartag{display:inline-flex;align-items:center;gap:.3rem;background:var(--card);border:1.5px solid var(--line);
+  border-radius:999px;padding:.16rem .3rem .16rem .6rem;font-size:.78rem}
+.weartag button{color:var(--ink-faint);font-size:.72rem;padding:0 .2rem}
+.weartag button:hover{color:var(--danger)}
+.tag.wear-hot{background:rgba(201,154,70,.2);color:#6B4E12}
+.tag.wear-idle{background:rgba(163,52,39,.1);color:var(--danger)}
+.tag.wear-cool{background:rgba(20,32,29,.06);color:var(--ink-soft)}
+.tag.wear-ok{background:rgba(44,110,82,.1);color:var(--ok)}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.5rem}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.cal-dow span{text-align:center;font-size:.7rem;font-weight:700;color:var(--ink-faint)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;border-radius:var(--r-sm);background:var(--card);border:1.5px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:2px}
+.cal-cell:hover{border-color:var(--ink-faint)}
+.cal-empty{background:transparent;border-color:transparent;pointer-events:none}
+.cal-today{border-color:var(--brass);border-width:2px}
+.cal-has{background:#F1F4EF}
+.cal-n{font-size:.78rem;font-weight:700;color:var(--ink-soft)}
+.cal-dots{display:flex;align-items:center;gap:2px}
+.cal-dots i{width:6px;height:6px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+.cal-dots em{font-size:.6rem;font-style:normal;color:var(--ink-faint)}
+
+/* roster */
+.rost{border-bottom:1.5px solid var(--line);padding:.75rem 0}
+.rost:last-of-type{border-bottom:none}
+.rost-h{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.45rem}
+.rost-h strong{font-family:var(--font-display);font-size:1.02rem;flex:1}
+.rost-freq{display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--ink-soft)}
+.rost-picks{display:flex;flex-direction:column;gap:.25rem}
+.rost-pick{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;padding:.35rem .45rem;
+  border-radius:var(--r-sm);font-size:.88rem}
+.rost-pick:hover{background:rgba(20,32,29,.05)}
+.rost-n{width:18px;height:18px;border-radius:50%;background:var(--teal);color:#EAF0EC;font-size:.68rem;
+  font-weight:700;display:grid;place-items:center;flex:none}
+.rost-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* outfit suggestions */
 .pick{display:flex;gap:.7rem;align-items:center;padding:.5rem 0;border-top:1.5px solid var(--line);cursor:pointer}
 .pick:first-of-type{border-top:none}
@@ -443,6 +491,9 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
         <span>Cabinet</span>
       </div>
       <div class="who-chip"><span class="avatar" id="meAvatar"></span><span id="meName"></span></div>
+      <button class="icon-btn" title="Wear log and roster" onclick="openWear()" aria-label="Wear log and roster">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+      </button>
       <button class="icon-btn" title="What goes with this?" onclick="openOutfit()" aria-label="Outfit suggestions">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5 10.1 10.9 5.5 9l4.6-1.4L12 3z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/></svg>
       </button>
@@ -489,6 +540,9 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
             <option value="new">Newest first</option>
             <option value="az">Name A–Z</option>
             <option value="brand">By brand</option>
+            <option value="unworn">Longest unworn</option>
+            <option value="least">Least worn</option>
+            <option value="most">Most worn</option>
           </select>
         </div>
         <div class="grid" id="grid"></div>
@@ -585,11 +639,46 @@ const SHARE_MODE = true;
    client code; what actually guards the data is the Firestore rules. */
 const DEFAULT_FIREBASE = {};   // the giveaway build ships with no project of its own
 
+/* Firestore caps a single document at 1 MiB, and photos are far and away the
+   biggest thing here — at the old size ceiling just two of them filled it,
+   after which every sync silently failed. So the cabinet itself (cabinet/main)
+   now carries no image data at all: each item's photos live in their own
+   document, cabinet/img_<itemId>, written only when that item's photos
+   actually change. Same collection, same security rule, nothing to set up. */
+const IMG_PREFIX = 'img_';
+const DOC_SAFE_BYTES = 900 * 1024;      // leave headroom under Firestore's 1 MiB
+
 const Cloud = (() => {
   const CKEY = 'cabinet.cloud.v1';
   /* `live` only goes true once Firestore has actually answered — connecting is
      not the same as being allowed in, and rules denials show up only here. */
   let app = null, db = null, unsub = null, live = false, lastError = '';
+  let cloudImages = {};      // itemId -> photos, as last seen from the cloud
+  let imgSig = {};           // itemId -> fingerprint of what we last wrote
+  let lastMeta = null;       // the cabinet itself, minus photos
+
+  /* Pull the photos out of the cabinet, leaving a count behind. Items are
+     copied shallowly on purpose — a deep copy would duplicate every photo in
+     memory on each save, which is megabytes of string copying per tap. */
+  function splitForCloud(source){
+    const images = {};
+    const items = (source.items||[]).map(it=>{
+      const imgs = Array.isArray(it.images) ? it.images : [];
+      if(imgs.length) images[it.id] = imgs;
+      return {...it, images:[], photoCount:imgs.length};
+    });
+    return {meta: {...source, items}, images};
+  }
+  /* Put them back, preferring whatever the cloud last told us. */
+  function attachImages(meta){
+    if(!meta) return null;
+    (meta.items||[]).forEach(it=>{
+      if(cloudImages[it.id]) it.images = cloudImages[it.id].slice();
+      else if(!Array.isArray(it.images)) it.images = [];
+    });
+    return meta;
+  }
+  const sigOf = imgs => imgs.length + ':' + imgs.reduce((n,s)=>n+s.length, 0);
 
   /* Settings > Sync overrides the built-in project; "Disconnect" writes an
      explicit off-switch so this device stops syncing entirely. */
@@ -621,11 +710,25 @@ const Cloud = (() => {
     try{
       app = window.firebase.apps && window.firebase.apps.length ? window.firebase.apps[0] : window.firebase.initializeApp(cfg);
       db = window.firebase.firestore(app);
-      unsub = db.collection('cabinet').doc('main').onSnapshot(snap=>{
+      /* One listener over the whole collection: the cabinet and every photo
+         document arrive through it, so a photo added on the other phone shows
+         up here the same way any other change does. */
+      unsub = db.collection('cabinet').onSnapshot(snap=>{
         live = true; lastError = '';
-        if(snap.metadata.hasPendingWrites) return; // that's our own write echoing back — ignore
-        const d = snap.data();
-        if(d && d.data) onRemoteChange(d.data);
+        let changed = false;
+        snap.docChanges().forEach(ch=>{
+          const id = ch.doc.id;
+          if(id === 'chat') return;               // chat has its own listener
+          if(id === 'main'){ lastMeta = (ch.doc.data()||{}).data || null; changed = true; }
+          else if(id.startsWith(IMG_PREFIX)){
+            const itemId = id.slice(IMG_PREFIX.length);
+            if(ch.type === 'removed') delete cloudImages[itemId];
+            else cloudImages[itemId] = (ch.doc.data()||{}).images || [];
+            changed = true;
+          }
+        });
+        if(snap.metadata.hasPendingWrites) return; // our own write echoing back
+        if(changed && lastMeta) onRemoteChange(attachImages(clone(lastMeta)));
       }, err => {
         live = false;
         lastError = (err && err.code) || 'unknown';
@@ -636,18 +739,54 @@ const Cloud = (() => {
       return true;
     }catch(e){ console.warn(e); return false; }
   }
+  /* One read of the collection brings back the cabinet and all its photos. */
   async function pull(){
     if(!db) return null;
     try{
-      const snap = await db.collection('cabinet').doc('main').get();
-      return snap.exists ? (snap.data().data || null) : null;
+      const snap = await db.collection('cabinet').get();
+      snap.forEach(doc=>{
+        if(doc.id === 'main') lastMeta = (doc.data()||{}).data || null;
+        else if(doc.id.startsWith(IMG_PREFIX))
+          cloudImages[doc.id.slice(IMG_PREFIX.length)] = (doc.data()||{}).images || [];
+      });
+      return lastMeta ? attachImages(clone(lastMeta)) : null;
     }catch(e){ console.warn(e); return null; }
   }
   async function push(dbObj, quiet){
     if(!db) return;
+    const {meta, images} = splitForCloud(dbObj);
     try{
-      await db.collection('cabinet').doc('main').set({data:dbObj, updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});
-      live = true; lastError = '';
+      await db.collection('cabinet').doc('main')
+        .set({data:meta, updatedAt:window.firebase.firestore.FieldValue.serverTimestamp()});
+
+      const writes = [], oversized = [];
+      Object.keys(images).forEach(id=>{
+        const sig = sigOf(images[id]);
+        if(imgSig[id] === sig) return;                     // nothing new for this item
+        const bytes = images[id].reduce((n,s)=>n+s.length, 0);
+        if(bytes > DOC_SAFE_BYTES){                        // refuse rather than fail silently
+          oversized.push(id);
+          return;
+        }
+        imgSig[id] = sig;
+        cloudImages[id] = images[id].slice();
+        writes.push(db.collection('cabinet').doc(IMG_PREFIX+id).set({images:images[id]}));
+      });
+      /* photos all removed, or the item itself deleted */
+      Object.keys(imgSig).forEach(id=>{
+        if(images[id]) return;
+        delete imgSig[id]; delete cloudImages[id];
+        writes.push(db.collection('cabinet').doc(IMG_PREFIX+id).delete());
+      });
+      await Promise.all(writes);
+
+      if(oversized.length){
+        live = false; lastError = 'too-large';
+        if(!quiet){
+          const it = DB.items.find(x=>x.id===oversized[0]);
+          toast(`Too many photos on ${it ? itemLabel(it) : 'one item'} to sync — remove one.`);
+        }
+      } else { live = true; lastError = ''; }
     }catch(e){
       live = false; lastError = (e && e.code) || 'unknown';
       console.warn(e);
@@ -936,11 +1075,63 @@ function lifespanFor(it, d){
     note: (daily || weekly) ? '' : 'No figures yet — add them below, or look them up on the web.'};
 }
 
+/* ---------- B3. WEAR LOG --------------------------------------------------
+   Every time something gets used, the date goes on the item as a plain
+   YYYY-MM-DD string. That's enough to answer all three questions: when did I
+   last wear this, how often do I actually use it, and what has been sitting
+   untouched at the back.                                                  */
+const WEAR_CAP = 400;                 // plenty of history without bloating sync
+const todayISO = () => new Date().toLocaleDateString('en-CA');   // local, not UTC
+function wearsOf(it){ return Array.isArray(it.wears) ? it.wears : []; }
+/* Take the maximum rather than trusting the order — entries can arrive from
+   the other phone, or out of sequence when a past date is added by hand. */
+function lastWorn(it){
+  const w = wearsOf(it);
+  return w.length ? w.reduce((a,b)=> b > a ? b : a) : null;
+}
+function daysSince(iso){
+  if(!iso) return null;
+  const then = new Date(iso + 'T00:00:00');
+  const now = new Date(todayISO() + 'T00:00:00');
+  return Math.round((now - then) / 86400000);
+}
+function logWear(it, iso){
+  const day = iso || todayISO();
+  const w = wearsOf(it).slice();
+  if(w.includes(day)) return false;            // already recorded for that day
+  w.push(day);
+  w.sort();
+  it.wears = w.slice(-WEAR_CAP);
+  return true;
+}
+function unlogWear(it, iso){ it.wears = wearsOf(it).filter(d=>d!==iso); }
+/* Wears in the last N days — the honest measure of "do I actually use this". */
+function wearsWithin(it, days){
+  return wearsOf(it).filter(d => { const n = daysSince(d); return n !== null && n <= days; }).length;
+}
+/* One short verdict per item, used on cards and in the detail sheet. */
+function usageFlag(it){
+  const w = wearsOf(it);
+  const owned = ageMonths(it);
+  if(!w.length){
+    if(owned !== null && owned >= 6) return {kind:'idle', text:'Never worn', detail:`Owned ${monthsLabel(owned)}, never logged`};
+    return {kind:'none', text:'Not logged yet', detail:'No wears recorded'};
+  }
+  const since = daysSince(lastWorn(it));
+  if(since === 0) return {kind:'hot',  text:'Worn today',     detail:'You wore this today'};
+  if(since === 1) return {kind:'hot',  text:'Worn yesterday', detail:'You wore this yesterday'};
+  if(since <= 3)  return {kind:'hot',  text:`Worn ${since}d ago`, detail:`Last worn ${since} days ago`};
+  if(since >= 180) return {kind:'idle', text:`Idle ${monthsLabel(Math.round(since/30))}`, detail:`Nothing since ${monthName(lastWorn(it).slice(0,7))}`};
+  if(since >= 90)  return {kind:'cool', text:`${Math.round(since/30)} mo unworn`, detail:`Last worn ${Math.round(since/30)} months ago`};
+  return {kind:'ok', text:`Worn ${since}d ago`, detail:`${w.length} wear${w.length===1?'':'s'} logged`};
+}
+
 /* Old saves had a single `image` string and real first names — bring both
    forward without losing anything. */
 function migrate(){
   (DB.items||[]).forEach(it=>{
     if(!Array.isArray(it.images)) it.images = it.image ? [it.image] : [];
+    if(!Array.isArray(it.wears)) it.wears = [];
     const o = it.fields && it.fields.owner;
     if(o && LEGACY_USERS[o]) it.fields.owner = LEGACY_USERS[o];
   });
@@ -958,7 +1149,13 @@ function migrate(){
     const c = it.fields && it.fields.color;
     if(c && COLOR_ALIASES[String(c).toLowerCase()]) it.fields.color = COLOR_ALIASES[String(c).toLowerCase()];
   });
-  DB.colors = COLORS.slice();
+  /* keep the basic palette available without discarding shades already added */
+  {
+    const have = new Map((DB.colors||[]).map(c=>[c.name.toLowerCase(), c]));
+    COLORS.forEach(c=>{ if(!have.has(c.name.toLowerCase())) have.set(c.name.toLowerCase(), c); });
+    DB.colors = sortedOptions([...have.values()].map(c=>c.name))
+      .map(n => have.get(n.toLowerCase()));
+  }
   (DB.drawers||[]).forEach(d=>{
     (d.fields||[]).forEach(f=>{
       if(f.key==='owner' && Array.isArray(f.options))
@@ -1188,6 +1385,14 @@ function visibleItems(){
   Object.entries(FILTERS).forEach(([k,v])=>{ if(v) list = list.filter(i => asArr(i.fields[k]).includes(v)); });
   if(SORT==='az') list.sort((a,b)=>a.name.localeCompare(b.name));
   else if(SORT==='brand') list.sort((a,b)=>(a.fields.brand||'').localeCompare(b.fields.brand||'') || a.name.localeCompare(b.name));
+  /* never-worn things sort to the very top of "longest unworn" — they're the
+     ones most in need of a wear, not the ones with no answer */
+  else if(SORT==='unworn') list.sort((a,b)=>{
+    const da = daysSince(lastWorn(a)), db = daysSince(lastWorn(b));
+    return (db === null ? 1e6 : db) - (da === null ? 1e6 : da);
+  });
+  else if(SORT==='least') list.sort((a,b)=>wearsOf(a).length - wearsOf(b).length);
+  else if(SORT==='most')  list.sort((a,b)=>wearsOf(b).length - wearsOf(a).length);
   else list.sort((a,b)=>b.createdAt-a.createdAt);
   return list;
 }
@@ -1230,6 +1435,7 @@ function renderGrid(){
         <div class="tags">
           ${tags}
           ${age !== null ? `<span class="tag tag-age">${esc(monthsLabel(age))}</span>` : ''}
+          ${(f => f.kind==='none' ? '' : `<span class="tag wear-${f.kind}">${esc(f.text)}</span>`)(usageFlag(it))}
         </div>
       </div>
     </button>`;
@@ -1421,7 +1627,7 @@ function openForm(id){
             <input class="input" id="f_imageurl" placeholder="…or paste an image link">
             <button type="button" class="btn btn-sm" onclick="addImageLink()">Add</button>
           </div>
-          <p class="hint" id="photoHint" style="margin:0">You can add more than one photo per item.</p>
+          <p class="hint" id="photoHint" style="margin:0">Up to ${PHOTOS_PER_ITEM} photos per item.</p>
         </div>
       </div>
       ${d.fields.map(f=>fieldHTML(f, it ? it.fields[f.key] : (f.key==='owner'?defOwner:''))).join('')}
@@ -1510,22 +1716,37 @@ function removePhoto(i){ formPhotos.splice(i,1); drawPrev(); }
 function addImageLink(){
   const el = $('#f_imageurl'); const v = (el.value||'').trim();
   if(!v){ toast('Paste a link first.'); return; }
+  if(formPhotos.length >= PHOTOS_PER_ITEM){ toast(`That's the limit of ${PHOTOS_PER_ITEM} photos — remove one first.`); return; }
   formPhotos.push(v); el.value=''; drawPrev();
 }
 /* Resize + compress before storing, so photos captured on a phone camera
    (often several MB each) stay well inside the size limit for local/shared
    storage. Ramps quality down further if a shot is still large after resizing. */
-const PHOTO_MAX_DIM = 1100, PHOTO_MAX_BYTES = 320*1024;
+const PHOTO_MAX_DIM = 1000, PHOTO_MAX_BYTES = 150*1024;
+const PHOTOS_PER_ITEM = 4;   // four at this size sit safely inside one Firestore document
 function compressDataUrl(dataUrl){
   return new Promise(resolve=>{
     const img = new Image();
     img.onload = () => {
-      const sc = Math.min(1, PHOTO_MAX_DIM/Math.max(img.width,img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.max(1,Math.round(img.width*sc)); c.height = Math.max(1,Math.round(img.height*sc));
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      let q = 0.82, out = c.toDataURL('image/jpeg', q);
-      while(out.length*0.75 > PHOTO_MAX_BYTES && q > 0.35){ q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      /* Drop quality first, since that costs the least visually. A busy photo
+         can bottom out at minimum quality and still be too big, so after that
+         shrink the picture itself — otherwise the size ceiling is a wish
+         rather than a limit, and one photo can fill a whole sync document. */
+      let dim = PHOTO_MAX_DIM, out = null;
+      for(let pass = 0; pass < 4; pass++){
+        const sc = Math.min(1, dim/Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width  = Math.max(1, Math.round(img.width * sc));
+        c.height = Math.max(1, Math.round(img.height * sc));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        let q = 0.82;
+        out = c.toDataURL('image/jpeg', q);
+        while(out.length * 0.75 > PHOTO_MAX_BYTES && q > 0.35){
+          q -= 0.1; out = c.toDataURL('image/jpeg', q);
+        }
+        if(out.length * 0.75 <= PHOTO_MAX_BYTES) break;
+        dim = Math.round(dim * 0.7);              // still too heavy — make it smaller
+      }
       resolve(out);
     };
     img.onerror = () => resolve(dataUrl);
@@ -1533,7 +1754,10 @@ function compressDataUrl(dataUrl){
   });
 }
 function handleFiles(e){
-  const files = Array.from(e.target.files || []); if(!files.length) return;
+  let files = Array.from(e.target.files || []); if(!files.length) return;
+  const room = PHOTOS_PER_ITEM - formPhotos.length;
+  if(room <= 0){ toast(`That's the limit of ${PHOTOS_PER_ITEM} photos — remove one first.`); e.target.value=''; return; }
+  if(files.length > room){ files = files.slice(0, room); toast(`Room for ${room} more — keeping the first ${room}.`); }
   const hint = $('#photoHint'); if(hint) hint.textContent = `Compressing ${files.length>1?files.length+' photos':'photo'}…`;
   Promise.all(files.map(file => new Promise(res=>{
     const r = new FileReader();
@@ -1542,7 +1766,7 @@ function handleFiles(e){
   }))).then(list=>{
     formPhotos.push(...list);
     drawPrev();
-    if(hint) hint.textContent = 'You can add more than one photo per item.';
+    if(hint) hint.textContent = `Up to ${PHOTOS_PER_ITEM} photos per item.`;
     e.target.value = '';
   });
 }
@@ -1659,6 +1883,7 @@ function openDetail(id){
     <div class="content">
       <div class="detail-hero">${hero}</div>
       ${thumbs}
+      ${wearPanelHTML(it)}
       <dl class="spec">${rows}</dl>
       ${lifeHTML}
     </div>
@@ -1668,6 +1893,66 @@ function openDetail(id){
       <button class="btn btn-primary" onclick="closeModal();openForm('${it.id}')">Edit</button>
     </footer>
   </div>`);
+}
+/* The wear log, as it appears inside an item. The warning when you've worn
+   something in the last few days is the point of the whole thing — it's what
+   stops the same pair going on four days running without you noticing. */
+function wearPanelHTML(it){
+  const f = usageFlag(it);
+  const w = wearsOf(it);
+  const recent = w.slice(-6).reverse();
+  const last90 = wearsWithin(it, 90);
+  const already = w.includes(todayISO());
+  return `<div class="wearbox wear-${f.kind}">
+    <div class="wearhead">
+      <span class="wearflag wear-${f.kind}">${esc(f.text)}</span>
+      <span class="hint">${esc(f.detail)}</span>
+    </div>
+    ${f.kind === 'hot' ? `<p class="lifeflag" style="margin:.5rem 0 0">You've had these on very recently — maybe give them a day off.</p>` : ''}
+    ${f.kind === 'idle' ? `<p class="lifeflag" style="margin:.5rem 0 0">These have been sitting at the back for a while. Worth wearing or passing on.</p>` : ''}
+    <div class="wearstats">
+      <span><strong>${w.length}</strong> wear${w.length===1?'':'s'} logged</span>
+      <span><strong>${last90}</strong> in the last 3 months</span>
+    </div>
+    <div class="wearacts">
+      <button class="btn btn-sm ${already?'':'btn-brass'}" ${already?'disabled':''} onclick="markWorn('${it.id}')">
+        ${already ? 'Logged for today ✓' : 'Wore this today'}
+      </button>
+      <input class="input" type="date" id="wearDate" max="${todayISO()}" style="width:auto">
+      <button class="btn btn-sm" onclick="markWorn('${it.id}', document.getElementById('wearDate').value)">Add that day</button>
+    </div>
+    ${recent.length ? `<div class="wearlist">
+      ${recent.map(d=>`<span class="weartag">${esc(prettyDay(d))}<button onclick="removeWear('${it.id}','${d}')" title="Remove">✕</button></span>`).join('')}
+      ${w.length > 6 ? `<span class="hint" style="align-self:center">+${w.length-6} more</span>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+function prettyDay(iso){
+  const n = daysSince(iso);
+  if(n === 0) return 'Today';
+  if(n === 1) return 'Yesterday';
+  const d = new Date(iso + 'T00:00:00');
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, sameYear ? {day:'numeric', month:'short'} : {day:'numeric', month:'short', year:'numeric'});
+}
+function markWorn(id, iso){
+  const it = DB.items.find(x=>x.id===id); if(!it) return;
+  if(iso && !/^\d{4}-\d{2}-\d{2}$/.test(iso)){ toast('Pick a date first.'); return; }
+  if(iso && daysSince(iso) < 0){ toast("That's in the future."); return; }
+  if(!logWear(it, iso)){ toast('Already logged for that day.'); return; }
+  save(); renderGrid();
+  refreshWearPanel(it);
+  toast(iso ? 'Logged for ' + prettyDay(iso) + '.' : 'Logged for today.');
+}
+function removeWear(id, iso){
+  const it = DB.items.find(x=>x.id===id); if(!it) return;
+  unlogWear(it, iso);
+  save(); renderGrid();
+  refreshWearPanel(it);
+}
+function refreshWearPanel(it){
+  const box = document.querySelector('.wearbox');
+  if(box) box.outerHTML = wearPanelHTML(it);
 }
 function switchDetailPhoto(i){
   const img = $('#heroImg'); if(img && DETAIL_IMAGES[i]) img.src = DETAIL_IMAGES[i];
@@ -1711,7 +1996,7 @@ function openChat(){
     <header><h2>Chat</h2><button class="btn btn-quiet btn-sm" onclick="closeChat()">Close</button></header>
     <div class="content" id="chatBody" style="min-height:240px"></div>
     <footer>
-      <input class="input" id="chatInput" placeholder="Message ${esc(OWNERS.filter(o=>o!==ME && DB.users[o])[0] || 'the other of you')}…" autocomplete="off" style="flex:1"
+      <input class="input" id="chatInput" placeholder="Message ${esc(Object.keys(DB.users||{}).filter(n=>n!==ME)[0] || 'the others')}…" autocomplete="off" style="flex:1"
              onkeydown="if(event.key==='Enter'){event.preventDefault();sendChat();}">
       <button class="btn btn-primary" onclick="sendChat()">Send</button>
     </footer>
@@ -2080,6 +2365,204 @@ function renderOutfitPicks(data){
     }).join('')}
     ${data.note?`<p class="hint" style="margin:.6rem 0 0">${esc(data.note)}</p>`:''}
   </div>`;
+}
+
+/* ---------- H4. CALENDAR + WEEKLY ROSTER ----------------------------------
+   The calendar answers "what did I wear, and when". The roster answers the
+   opposite question — "what should I wear this week" — by spreading the
+   sessions you actually do across the things that suit them, always reaching
+   for whatever has gone longest without a wear.                           */
+const DEFAULT_ROSTER = [
+  {activity:'Office',    perWeek:5},
+  {activity:'Gym',       perWeek:3},
+  {activity:'Badminton', perWeek:2},
+  {activity:'Running',   perWeek:1}
+];
+function roster(){
+  if(!Array.isArray(DB.roster) || !DB.roster.length) DB.roster = clone(DEFAULT_ROSTER);
+  return DB.roster;
+}
+let wearTab = 'calendar', calMonth = null;
+
+function openWear(){
+  calMonth = calMonth || todayISO().slice(0,7);
+  showModal(`<div class="sheet" role="dialog" aria-modal="true" style="max-width:600px">
+    <header><h2>Wear</h2><button class="btn btn-quiet btn-sm" onclick="closeModal()">Close</button></header>
+    <div class="content">
+      <div class="seg" role="tablist">
+        <button role="tab" aria-selected="${wearTab==='calendar'}" onclick="wearTab='calendar';paintWear()">Calendar</button>
+        <button role="tab" aria-selected="${wearTab==='roster'}" onclick="wearTab='roster';paintWear()">Weekly roster</button>
+        <button role="tab" aria-selected="${wearTab==='neglected'}" onclick="wearTab='neglected';paintWear()">Neglected</button>
+      </div>
+      <div id="wearBody"></div>
+    </div>
+  </div>`);
+  paintWear();
+}
+function paintWear(){
+  const b = $('#wearBody'); if(!b) return;
+  b.innerHTML = wearTab === 'calendar' ? calendarHTML()
+              : wearTab === 'roster'   ? rosterHTML()
+              : neglectedHTML();
+  /* keep the segmented control in step with what's showing */
+  const order = ['calendar','roster','neglected'];
+  $$('.sheet .seg button').forEach((btn,i)=>btn.setAttribute('aria-selected', String(order[i] === wearTab)));
+}
+
+/* ---- calendar ---- */
+function wearsByDay(){
+  const map = {};
+  DB.items.forEach(it=>wearsOf(it).forEach(d=>{ (map[d] = map[d] || []).push(it); }));
+  return map;
+}
+function shiftMonth(n){
+  calMonth = calMonth || todayISO().slice(0,7);
+  const [y,m] = calMonth.split('-').map(Number);
+  const d = new Date(y, m-1+n, 1);
+  calMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  paintWear();
+}
+function calendarHTML(){
+  calMonth = calMonth || todayISO().slice(0,7);
+  const [y,m] = calMonth.split('-').map(Number);
+  const first = new Date(y, m-1, 1);
+  const days = new Date(y, m, 0).getDate();
+  const lead = (first.getDay() + 6) % 7;          // weeks start Monday
+  const map = wearsByDay();
+  const cells = [];
+  for(let i=0;i<lead;i++) cells.push('<div class="cal-cell cal-empty"></div>');
+  for(let d=1; d<=days; d++){
+    const iso = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const worn = map[iso] || [];
+    const isToday = iso === todayISO();
+    cells.push(`<button class="cal-cell${isToday?' cal-today':''}${worn.length?' cal-has':''}" onclick="showDay('${iso}')">
+      <span class="cal-n">${d}</span>
+      ${worn.length ? `<span class="cal-dots">${worn.slice(0,3).map(it=>`<i style="background:${hexOf(it.fields.color)}"></i>`).join('')}${worn.length>3?`<em>+${worn.length-3}</em>`:''}</span>` : ''}
+    </button>`);
+  }
+  const monthTotal = Object.entries(map).filter(([d])=>d.startsWith(calMonth)).reduce((n,[,v])=>n+v.length,0);
+  return `<div class="cal-head">
+      <button class="btn btn-sm" onclick="shiftMonth(-1)">‹</button>
+      <strong>${esc(monthName(calMonth))}</strong>
+      <button class="btn btn-sm" onclick="shiftMonth(1)" ${calMonth >= todayISO().slice(0,7) ? 'disabled' : ''}>›</button>
+    </div>
+    <div class="cal-dow">${['M','T','W','T','F','S','S'].map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="cal-grid">${cells.join('')}</div>
+    <p class="hint" style="margin-top:.7rem">${monthTotal} wear${monthTotal===1?'':'s'} logged this month. Tap a day to see what it was.</p>
+    <div id="dayDetail"></div>`;
+}
+function showDay(iso){
+  const worn = (wearsByDay()[iso] || []);
+  const box = $('#dayDetail'); if(!box) return;
+  box.innerHTML = `<div class="lifebox" style="margin-top:.8rem">
+    <div class="lifebox-h">${esc(prettyDay(iso))}</div>
+    ${worn.length
+      ? worn.map(it=>`<div class="pick" onclick="closeModal();openDetail('${it.id}')">
+          <div class="pick-th">${(it.images||[])[0]?`<img src="${esc(it.images[0])}" alt="">`:`<div class="ph" style="background:${hexOf(it.fields.color)};height:100%"></div>`}</div>
+          <div class="pick-b"><div class="nm">${nameBlock(it)}</div></div>
+        </div>`).join('')
+      : `<p class="hint" style="margin:0">Nothing logged that day.</p>`}
+  </div>`;
+}
+
+/* ---- weekly roster ---- */
+/* Candidates for an activity are things tagged for it; the one that has gone
+   longest without a wear goes first, so use spreads instead of piling onto a
+   favourite. */
+function itemLabel(it){
+  const b = it.fields.brand, m = it.fields.model;
+  if(m) return [b,m].filter(Boolean).join(' ');
+  if(b && b.toLowerCase() !== 'other') return b;
+  return it.name || 'Item';
+}
+function candidatesFor(activity){
+  const a = activity.toLowerCase().trim();
+  return DB.items
+    .filter(it => asArr(it.fields.purpose).some(p => String(p).toLowerCase().trim() === a))
+    .sort((x,y)=>{
+      const dx = daysSince(lastWorn(x)), dy = daysSince(lastWorn(y));
+      return (dy === null ? 1e6 : dy) - (dx === null ? 1e6 : dx);
+    });
+}
+function buildRoster(){
+  return roster().map(r=>{
+    const pool = candidatesFor(r.activity);
+    const picks = [];
+    for(let i=0;i<r.perWeek;i++) picks.push(pool.length ? pool[i % pool.length] : null);
+    return {...r, pool, picks};
+  });
+}
+function rosterHTML(){
+  const plan = buildRoster();
+  const total = plan.reduce((n,r)=>n+r.perWeek,0);
+  return `<p class="hint" style="margin:0 0 .9rem">How your week usually goes. Each session is filled with whatever has gone longest without a wear, so everything gets a turn.</p>
+    ${plan.map((r,i)=>`
+      <div class="rost">
+        <div class="rost-h">
+          <strong>${esc(r.activity)}</strong>
+          <span class="rost-freq">
+            <button class="btn btn-sm" onclick="bumpFreq(${i},-1)" ${r.perWeek<=0?'disabled':''}>−</button>
+            <span>${r.perWeek}× a week</span>
+            <button class="btn btn-sm" onclick="bumpFreq(${i},1)" ${r.perWeek>=14?'disabled':''}>+</button>
+          </span>
+          <button class="btn btn-danger btn-sm" onclick="dropActivity(${i})">Remove</button>
+        </div>
+        ${r.pool.length
+          ? `<div class="rost-picks">${r.picks.map((it,n)=>it?`
+              <button class="rost-pick" onclick="closeModal();openDetail('${it.id}')">
+                <span class="rost-n">${n+1}</span>
+                <i class="dot" style="background:${hexOf(it.fields.color)}"></i>
+                <span class="rost-nm">${esc(itemLabel(it))}</span>
+                <span class="hint">${esc((drawer(it.drawerId)||{}).noun || '')} · ${esc(usageFlag(it).text)}</span>
+              </button>`:'').join('')}</div>
+             ${r.pool.length < r.perWeek ? `<p class="hint" style="margin:.4rem 0 0">Only ${r.pool.length} thing${r.pool.length===1?'':'s'} tagged “${esc(r.activity)}”, so some repeat. Tag another to spread the load.</p>` : ''}`
+          : `<p class="hint" style="margin:.3rem 0 0">Nothing is tagged “${esc(r.activity)}” yet — add that to an item's Purpose and it'll show up here.</p>`}
+      </div>`).join('')}
+    <div style="margin-top:1rem;padding-top:.9rem;border-top:1.5px solid var(--line)">
+      <div class="row2">
+        <div class="field" style="margin-bottom:.5rem"><label class="lbl" for="ra_name">Add an activity</label>
+          <input class="input" id="ra_name" placeholder="e.g. Padel"></div>
+        <div class="field" style="margin-bottom:.5rem"><label class="lbl" for="ra_freq">Times a week</label>
+          <input class="input" id="ra_freq" type="number" min="1" max="14" value="1"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="addActivity()">Add</button>
+      <p class="hint" style="margin-top:.7rem">${total} session${total===1?'':'s'} a week in total.</p>
+    </div>`;
+}
+function bumpFreq(i, d){
+  const r = roster()[i]; if(!r) return;
+  r.perWeek = Math.max(0, Math.min(14, r.perWeek + d));
+  save(); paintWear();
+}
+function dropActivity(i){
+  roster().splice(i,1); save(); paintWear();
+}
+function addActivity(){
+  const name = ($('#ra_name').value||'').trim();
+  const n = parseInt($('#ra_freq').value, 10);
+  if(!name){ toast('Name the activity.'); return; }
+  if(roster().some(r=>r.activity.toLowerCase()===name.toLowerCase())){ toast('That one is already here.'); return; }
+  roster().push({activity:name, perWeek: isNaN(n) ? 1 : Math.max(1, Math.min(14, n))});
+  save(); paintWear();
+  toast(name + ' added.');
+}
+
+/* ---- what's being neglected ---- */
+function neglectedHTML(){
+  const scored = DB.items.map(it=>({it, since: daysSince(lastWorn(it)), n: wearsOf(it).length}))
+    .filter(r => r.since === null || r.since >= 60)
+    .sort((a,b)=>(b.since === null ? 1e6 : b.since) - (a.since === null ? 1e6 : a.since));
+  if(!scored.length) return `<p class="hint">Nothing is being neglected — everything has had a wear in the last couple of months.</p>`;
+  return `<p class="hint" style="margin:0 0 .8rem">Untouched for two months or more, longest first.</p>
+    ${scored.map(r=>`<div class="pick" onclick="closeModal();openDetail('${r.it.id}')">
+      <div class="pick-th">${(r.it.images||[])[0]?`<img src="${esc(r.it.images[0])}" alt="">`:`<div class="ph" style="background:${hexOf(r.it.fields.color)};height:100%"></div>`}</div>
+      <div class="pick-b">
+        <div class="nm">${nameBlock(r.it)}</div>
+        <p class="hint" style="margin:.2rem 0 0">${r.since === null
+          ? (r.n ? 'No recent wears' : 'Never logged a wear')
+          : `Last worn ${prettyDay(lastWorn(r.it))} · ${r.n} wear${r.n===1?'':'s'} in total`}</p>
+      </div>
+    </div>`).join('')}`;
 }
 
 /* ---------- I. SETTINGS --------------------------------------------------- */
