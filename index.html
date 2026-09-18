@@ -345,6 +345,23 @@ main{max-width:var(--maxw);margin:0 auto;padding:1.1rem 1rem 6rem}
   font-weight:700;display:grid;place-items:center;flex:none}
 .rost-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* who wore it */
+.wearwho{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:.55rem 0}
+.wearwho .chip{padding:.28rem .6rem}
+.wearwho .chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#F4F6F3}
+
+/* a roster session: one outfit drawn from every drawer that has something */
+.sess-list{display:flex;flex-direction:column;gap:.4rem}
+.sess{display:flex;align-items:flex-start;gap:.5rem}
+.sess .rost-n{margin-top:.28rem}
+.sess-items{display:flex;flex-wrap:wrap;gap:.3rem;flex:1;min-width:0}
+.sess-pick{display:inline-flex;align-items:center;gap:.35rem;max-width:100%;
+  padding:.3rem .55rem;border:1.5px solid var(--line);border-radius:999px;
+  background:#FBFCFA;font-size:.83rem}
+.sess-pick:hover{border-color:var(--ink-faint);background:#fff}
+.sess-ic{font-size:.9rem}
+.sess-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* outfit suggestions */
 .pick{display:flex;gap:.7rem;align-items:center;padding:.5rem 0;border-top:1.5px solid var(--line);cursor:pointer}
 .pick:first-of-type{border-top:none}
@@ -1113,11 +1130,22 @@ function lifespanFor(it, d){
 const WEAR_CAP = 400;                 // plenty of history without bloating sync
 const todayISO = () => new Date().toLocaleDateString('en-CA');   // local, not UTC
 function wearsOf(it){ return Array.isArray(it.wears) ? it.wears : []; }
+/* An entry is {d:'YYYY-MM-DD', by:'<name>'}. Older saves recorded only the
+   date as a plain string, so every reader accepts both shapes rather than
+   rewriting history — nothing is lost, it just has no name against it. */
+function wearDay(w){ return typeof w === 'string' ? w : (w && w.d) || ''; }
+function wearBy(w){ return typeof w === 'string' ? '' : (w && w.by) || ''; }
 /* Take the maximum rather than trusting the order — entries can arrive from
    the other phone, or out of sequence when a past date is added by hand. */
 function lastWorn(it){
-  const w = wearsOf(it);
-  return w.length ? w.reduce((a,b)=> b > a ? b : a) : null;
+  const days = wearsOf(it).map(wearDay).filter(Boolean);
+  return days.length ? days.reduce((a,b)=> b > a ? b : a) : null;
+}
+/* Who wore it last, when that was recorded. */
+function lastWornBy(it){
+  const day = lastWorn(it); if(!day) return '';
+  const hit = wearsOf(it).filter(w=>wearDay(w)===day).map(wearBy).filter(Boolean);
+  return hit[hit.length-1] || '';
 }
 function daysSince(iso){
   if(!iso) return null;
@@ -1125,19 +1153,24 @@ function daysSince(iso){
   const now = new Date(todayISO() + 'T00:00:00');
   return Math.round((now - then) / 86400000);
 }
-function logWear(it, iso){
+function logWear(it, iso, by){
   const day = iso || todayISO();
+  const who = by || ME || '';
   const w = wearsOf(it).slice();
-  if(w.includes(day)) return false;            // already recorded for that day
-  w.push(day);
-  w.sort();
+  /* the same person on the same day is a duplicate; two people both wearing
+     it that day are two separate entries */
+  if(w.some(x => wearDay(x)===day && wearBy(x)===who)) return false;
+  w.push({d:day, by:who});
+  w.sort((a,b)=> wearDay(a).localeCompare(wearDay(b)));
   it.wears = w.slice(-WEAR_CAP);
   return true;
 }
-function unlogWear(it, iso){ it.wears = wearsOf(it).filter(d=>d!==iso); }
+function unlogWear(it, iso, by){
+  it.wears = wearsOf(it).filter(w => !(wearDay(w)===iso && wearBy(w)===(by||'')));
+}
 /* Wears in the last N days — the honest measure of "do I actually use this". */
 function wearsWithin(it, days){
-  return wearsOf(it).filter(d => { const n = daysSince(d); return n !== null && n <= days; }).length;
+  return wearsOf(it).filter(w => { const n = daysSince(wearDay(w)); return n !== null && n <= days; }).length;
 }
 /* One short verdict per item, used on cards and in the detail sheet. */
 function usageFlag(it){
@@ -1148,9 +1181,10 @@ function usageFlag(it){
     return {kind:'none', text:'Not logged yet', detail:'No wears recorded'};
   }
   const since = daysSince(lastWorn(it));
-  if(since === 0) return {kind:'hot',  text:'Worn today',     detail:'You wore this today'};
-  if(since === 1) return {kind:'hot',  text:'Worn yesterday', detail:'You wore this yesterday'};
-  if(since <= 3)  return {kind:'hot',  text:`Worn ${since}d ago`, detail:`Last worn ${since} days ago`};
+  const who = lastWornBy(it), byWhom = who ? who + ' wore this' : 'Worn';
+  if(since === 0) return {kind:'hot',  text:'Worn today',     detail:byWhom + ' today'};
+  if(since === 1) return {kind:'hot',  text:'Worn yesterday', detail:byWhom + ' yesterday'};
+  if(since <= 3)  return {kind:'hot',  text:`Worn ${since}d ago`, detail:`${byWhom} ${since} days ago`};
   if(since >= 180) return {kind:'idle', text:`Idle ${monthsLabel(Math.round(since/30))}`, detail:`Nothing since ${monthName(lastWorn(it).slice(0,7))}`};
   if(since >= 90)  return {kind:'cool', text:`${Math.round(since/30)} mo unworn`, detail:`Last worn ${Math.round(since/30)} months ago`};
   return {kind:'ok', text:`Worn ${since}d ago`, detail:`${w.length} wear${w.length===1?'':'s'} logged`};
@@ -1231,6 +1265,14 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('sh
 function drawer(id){ return DB.drawers.find(d=>d.id===id) || DB.drawers[0]; }
 function initials(n){ return (n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
 function asArr(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
+/* Safe to drop inside onclick="…'HERE'…": escapes for the JavaScript string
+   and for the surrounding attribute. Names are typed by people, and one
+   apostrophe would otherwise break every button carrying that name. */
+function jsq(s){
+  return String(s ?? '')
+    .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
 /* Brand small on top, model bigger underneath — falls back to the plain name
    for drawers that don't have both a brand and a model field (bags, tumblers). */
 function nameBlock(it){
@@ -1932,7 +1974,9 @@ function wearPanelHTML(it){
   const w = wearsOf(it);
   const recent = w.slice(-6).reverse();
   const last90 = wearsWithin(it, 90);
-  const already = w.includes(todayISO());
+  const people = Object.keys(DB.users || {});
+  if(!WEAR_WHO || !people.includes(WEAR_WHO)) WEAR_WHO = ME || people[0] || '';
+  const already = w.some(x => wearDay(x)===todayISO() && wearBy(x)===WEAR_WHO);
   return `<div class="wearbox wear-${f.kind}">
     <div class="wearhead">
       <span class="wearflag wear-${f.kind}">${esc(f.text)}</span>
@@ -1944,18 +1988,36 @@ function wearPanelHTML(it){
       <span><strong>${w.length}</strong> wear${w.length===1?'':'s'} logged</span>
       <span><strong>${last90}</strong> in the last 3 months</span>
     </div>
+    ${people.length > 1 ? `<div class="wearwho">
+      <span class="lbl" style="margin:0">Worn by</span>
+      ${people.map(n=>`<button type="button" class="chip" aria-pressed="${n===WEAR_WHO}" onclick="setWearWho('${jsq(n)}','${it.id}')">
+        <i class="dot" style="background:${ownerColor(n)}"></i>${esc(n)}</button>`).join('')}
+    </div>` : ''}
     <div class="wearacts">
       <button class="btn btn-sm ${already?'':'btn-brass'}" ${already?'disabled':''} onclick="markWorn('${it.id}')">
-        ${already ? 'Logged for today ✓' : 'Wore this today'}
+        ${already ? `Logged for ${esc(WEAR_WHO||'today')} ✓` : 'Wore this today'}
       </button>
       <input class="input" type="date" id="wearDate" max="${todayISO()}" style="width:auto">
       <button class="btn btn-sm" onclick="markWorn('${it.id}', document.getElementById('wearDate').value)">Add that day</button>
     </div>
     ${recent.length ? `<div class="wearlist">
-      ${recent.map(d=>`<span class="weartag">${esc(prettyDay(d))}<button onclick="removeWear('${it.id}','${d}')" title="Remove">✕</button></span>`).join('')}
+      ${recent.map(x=>{
+        const d = wearDay(x), by = wearBy(x);
+        return `<span class="weartag">
+          ${by ? `<i class="dot" style="background:${ownerColor(by)}" title="${esc(by)}"></i>` : ''}
+          ${esc(prettyDay(d))}${by ? ' · ' + esc(by) : ''}
+          <button onclick="removeWear('${it.id}','${d}','${jsq(by)}')" title="Remove">✕</button></span>`;
+      }).join('')}
       ${w.length > 6 ? `<span class="hint" style="align-self:center">+${w.length-6} more</span>` : ''}
     </div>` : ''}
   </div>`;
+}
+/* Who the next log is recorded against — defaults to whoever is signed in. */
+let WEAR_WHO = null;
+function setWearWho(name, itemId){
+  WEAR_WHO = name;
+  const it = DB.items.find(x=>x.id===itemId);
+  if(it) refreshWearPanel(it);
 }
 function prettyDay(iso){
   const n = daysSince(iso);
@@ -1969,14 +2031,15 @@ function markWorn(id, iso){
   const it = DB.items.find(x=>x.id===id); if(!it) return;
   if(iso && !/^\d{4}-\d{2}-\d{2}$/.test(iso)){ toast('Pick a date first.'); return; }
   if(iso && daysSince(iso) < 0){ toast("That's in the future."); return; }
-  if(!logWear(it, iso)){ toast('Already logged for that day.'); return; }
+  const who = WEAR_WHO || ME || '';
+  if(!logWear(it, iso, who)){ toast(`Already logged for ${who||'that day'}.`); return; }
   save(); renderGrid();
   refreshWearPanel(it);
-  toast(iso ? 'Logged for ' + prettyDay(iso) + '.' : 'Logged for today.');
+  toast(`Logged${who ? ' for ' + who : ''}${iso ? ', ' + prettyDay(iso) : ''}.`);
 }
-function removeWear(id, iso){
+function removeWear(id, iso, by){
   const it = DB.items.find(x=>x.id===id); if(!it) return;
-  unlogWear(it, iso);
+  unlogWear(it, iso, by);
   save(); renderGrid();
   refreshWearPanel(it);
 }
@@ -2442,7 +2505,10 @@ function paintWear(){
 /* ---- calendar ---- */
 function wearsByDay(){
   const map = {};
-  DB.items.forEach(it=>wearsOf(it).forEach(d=>{ (map[d] = map[d] || []).push(it); }));
+  DB.items.forEach(it => wearsOf(it).forEach(w=>{
+    const d = wearDay(w); if(!d) return;
+    (map[d] = map[d] || []).push({item:it, by:wearBy(w)});
+  }));
   return map;
 }
 function shiftMonth(n){
@@ -2467,10 +2533,13 @@ function calendarHTML(){
     const isToday = iso === todayISO();
     cells.push(`<button class="cal-cell${isToday?' cal-today':''}${worn.length?' cal-has':''}" onclick="showDay('${iso}')">
       <span class="cal-n">${d}</span>
-      ${worn.length ? `<span class="cal-dots">${worn.slice(0,3).map(it=>`<i style="background:${hexOf(it.fields.color)}"></i>`).join('')}${worn.length>3?`<em>+${worn.length-3}</em>`:''}</span>` : ''}
+      ${worn.length ? `<span class="cal-dots">${worn.slice(0,3).map(e=>`<i style="background:${hexOf(e.item.fields.color)};box-shadow:0 0 0 1.5px ${e.by?ownerColor(e.by):'transparent'}" title="${esc(e.by||'')}"></i>`).join('')}${worn.length>3?`<em>+${worn.length-3}</em>`:''}</span>` : ''}
     </button>`);
   }
   const monthTotal = Object.entries(map).filter(([d])=>d.startsWith(calMonth)).reduce((n,[,v])=>n+v.length,0);
+  const byPerson = {};
+  Object.entries(map).filter(([d])=>d.startsWith(calMonth))
+    .forEach(([,v])=>v.forEach(e=>{ if(e.by) byPerson[e.by] = (byPerson[e.by]||0)+1; }));
   return `<div class="cal-head">
       <button class="btn btn-sm" onclick="shiftMonth(-1)">‹</button>
       <strong>${esc(monthName(calMonth))}</strong>
@@ -2478,7 +2547,9 @@ function calendarHTML(){
     </div>
     <div class="cal-dow">${['M','T','W','T','F','S','S'].map(d=>`<span>${d}</span>`).join('')}</div>
     <div class="cal-grid">${cells.join('')}</div>
-    <p class="hint" style="margin-top:.7rem">${monthTotal} wear${monthTotal===1?'':'s'} logged this month. Tap a day to see what it was.</p>
+    <p class="hint" style="margin-top:.7rem">${monthTotal} wear${monthTotal===1?'':'s'} logged this month${
+      Object.keys(byPerson).length ? ' — ' + Object.entries(byPerson).map(([n,c])=>esc(n)+' '+c).join(', ') : ''
+    }. Tap a day to see what it was.</p>
     <div id="dayDetail"></div>`;
 }
 function showDay(iso){
@@ -2487,9 +2558,12 @@ function showDay(iso){
   box.innerHTML = `<div class="lifebox" style="margin-top:.8rem">
     <div class="lifebox-h">${esc(prettyDay(iso))}</div>
     ${worn.length
-      ? worn.map(it=>`<div class="pick" onclick="closeModal();openDetail('${it.id}')">
-          <div class="pick-th">${(it.images||[])[0]?`<img src="${esc(it.images[0])}" alt="">`:`<div class="ph" style="background:${hexOf(it.fields.color)};height:100%"></div>`}</div>
-          <div class="pick-b"><div class="nm">${nameBlock(it)}</div></div>
+      ? worn.map(e=>`<div class="pick" onclick="closeModal();openDetail('${e.item.id}')">
+          <div class="pick-th">${(e.item.images||[])[0]?`<img src="${esc(e.item.images[0])}" alt="">`:`<div class="ph" style="background:${hexOf(e.item.fields.color)};height:100%"></div>`}</div>
+          <div class="pick-b">
+            <div class="nm">${nameBlock(e.item)}</div>
+            ${e.by?`<p class="hint" style="margin:.15rem 0 0"><i class="dot" style="background:${ownerColor(e.by)}"></i>${esc(e.by)}</p>`:''}
+          </div>
         </div>`).join('')
       : `<p class="hint" style="margin:0">Nothing logged that day.</p>`}
   </div>`;
@@ -2514,12 +2588,21 @@ function candidatesFor(activity){
       return (dy === null ? 1e6 : dy) - (dx === null ? 1e6 : dx);
     });
 }
+/* A session isn't one thing, it's an outfit: one pick from every drawer that
+   has something suitable. Two drawers gives shoes and a bag; add t-shirts and
+   trousers and the same session fills out to four. Each drawer rotates through
+   its own pool independently, so nothing gets over-used. */
 function buildRoster(){
   return roster().map(r=>{
-    const pool = candidatesFor(r.activity);
-    const picks = [];
-    for(let i=0;i<r.perWeek;i++) picks.push(pool.length ? pool[i % pool.length] : null);
-    return {...r, pool, picks};
+    const all = candidatesFor(r.activity);
+    const byDrawer = DB.drawers
+      .map(d => ({drawer:d, pool: all.filter(it => it.drawerId === d.id)}))
+      .filter(x => x.pool.length);
+    const sessions = [];
+    for(let i=0; i<r.perWeek; i++){
+      sessions.push(byDrawer.map(x => ({drawer:x.drawer, item:x.pool[i % x.pool.length]})));
+    }
+    return {...r, byDrawer, sessions, total: all.length};
   });
 }
 function rosterHTML(){
@@ -2537,16 +2620,25 @@ function rosterHTML(){
           </span>
           <button class="btn btn-danger btn-sm" onclick="dropActivity(${i})">Remove</button>
         </div>
-        ${r.pool.length
-          ? `<div class="rost-picks">${r.picks.map((it,n)=>it?`
-              <button class="rost-pick" onclick="closeModal();openDetail('${it.id}')">
+        ${r.byDrawer.length
+          ? `<div class="sess-list">${r.sessions.map((sess,n)=>`
+              <div class="sess">
                 <span class="rost-n">${n+1}</span>
-                <i class="dot" style="background:${hexOf(it.fields.color)}"></i>
-                <span class="rost-nm">${esc(itemLabel(it))}</span>
-                <span class="hint">${esc((drawer(it.drawerId)||{}).noun || '')} · ${esc(usageFlag(it).text)}</span>
-              </button>`:'').join('')}</div>
-             ${r.pool.length < r.perWeek ? `<p class="hint" style="margin:.4rem 0 0">Only ${r.pool.length} thing${r.pool.length===1?'':'s'} tagged “${esc(r.activity)}”, so some repeat. Tag another to spread the load.</p>` : ''}`
-          : `<p class="hint" style="margin:.3rem 0 0">Nothing is tagged “${esc(r.activity)}” yet — add that to an item's Purpose and it'll show up here.</p>`}
+                <div class="sess-items">
+                  ${sess.map(s=>`
+                    <button class="sess-pick" onclick="closeModal();openDetail('${s.item.id}')" title="${esc(s.drawer.name)} · ${esc(usageFlag(s.item).text)}">
+                      <span class="sess-ic">${esc(s.drawer.icon||'📦')}</span>
+                      <i class="dot" style="background:${hexOf(s.item.fields.color)}"></i>
+                      <span class="sess-nm">${esc(itemLabel(s.item))}</span>
+                    </button>`).join('')}
+                </div>
+              </div>`).join('')}</div>
+             ${r.byDrawer.some(x=>x.pool.length < r.perWeek)
+               ? `<p class="hint" style="margin:.45rem 0 0">Some repeat across the week — ${
+                   r.byDrawer.filter(x=>x.pool.length < r.perWeek)
+                     .map(x=>`${esc(x.drawer.name)} ${x.pool.length}`).join(', ')
+                 } tagged “${esc(r.activity)}”, against ${r.perWeek} session${r.perWeek===1?'':'s'}.</p>` : ''}`
+          : `<p class="hint" style="margin:.3rem 0 0">Nothing is tagged “${esc(r.activity)}” yet — add that to an item's Purpose and it'll show up here, from every drawer that has one.</p>`}
       </div>`).join('')}
     <div style="margin-top:1rem;padding-top:.9rem;border-top:1.5px solid var(--line)">
       <div class="row2">
